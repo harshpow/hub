@@ -1,0 +1,533 @@
+-- MADE BY HZSH AND CHATGPT MY LOVE
+
+-- Get services
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+
+-- Get local player
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Get the InCourt areas
+local inCourtAreas = {
+    Workspace:WaitForChild("InCourt1"),
+    Workspace:WaitForChild("InCourt2"),
+    Workspace:WaitForChild("InCourt3")
+}
+local currentCourtIndex = 1
+
+-- Toggle variables
+local scriptEnabled = false
+local speedScriptEnabled = false
+local speedMultiplier = 0.015
+local jumpScriptEnabled = false
+local jumpHeight = 2.5 -- Default jump height in studs
+local tiltScriptEnabled = false
+local tiltValue = 3500 -- Default tilt value
+local autolockEnabled = false
+local ballTrajectoryEnabled = false
+
+-- Function to create a visualization part
+local function createVisualizationPart()
+    local part = Instance.new("Part")
+    part.Anchored = true
+    part.CanCollide = false
+    part.Size = Vector3.new(3, 3, 3) -- Increased size for better visibility
+    part.Shape = Enum.PartType.Ball
+    part.BrickColor = BrickColor.new("Bright red")
+    part.Material = Enum.Material.Neon
+    part.Transparency = 0.7
+    part.Parent = Workspace
+    return part
+end
+
+local visualizationPart = createVisualizationPart()
+
+-- Function to find the closest ball part inside Balls.Ball models within the selected court area
+local function getClosestBall()
+    local closestBallPart = nil
+    local shortestDistance = math.huge
+    local extendedBoundary = 18 -- Extend boundary by 5 studs
+    local inCourtArea = inCourtAreas[currentCourtIndex]
+
+    for _, ballModel in ipairs(Workspace.Balls:GetChildren()) do
+        if ballModel:IsA("Model") then
+            local ballPart = ballModel:FindFirstChild("Ball")
+            if ballPart and ballPart:IsA("Part") then
+                -- Check if the ball is within the extended InCourt area
+                if ballPart.Position.X > (inCourtArea.Position.X - inCourtArea.Size.X / 2 - extendedBoundary) and
+                   ballPart.Position.X < (inCourtArea.Position.X + inCourtArea.Size.X / 2 + extendedBoundary) and
+                   ballPart.Position.Z > (inCourtArea.Position.Z - inCourtArea.Size.Z / 2 - extendedBoundary) and
+                   ballPart.Position.Z < (inCourtArea.Position.Z + inCourtArea.Size.Z / 2 + extendedBoundary) then
+
+                    local distance = (humanoidRootPart.Position - ballPart.Position).Magnitude
+                    if distance < shortestDistance then
+                        closestBallPart = ballPart
+                        shortestDistance = distance
+                    end
+                end
+            end
+        end
+    end
+
+    return closestBallPart
+end
+
+-- Function to apply force towards the closest ball
+local function applyForceTowardsBall()
+    local gui = player.PlayerGui:FindFirstChild("PowerStam")
+    if gui and gui:FindFirstChild("Main") and gui.Main:FindFirstChild("TextLabel") then
+        local textLabel = gui.Main.TextLabel
+        if textLabel.Text == "BLOCK" then
+            return
+        end
+    end
+
+    local ballPart = getClosestBall()
+    if ballPart then
+        -- Create or update BodyVelocity to apply force
+        local bodyVelocity = humanoidRootPart:FindFirstChild("PushBodyVelocity")
+        if not bodyVelocity then
+            bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.Name = "PushBodyVelocity"
+            bodyVelocity.MaxForce = Vector3.new(1e4, 0, 1e4) -- X and Z, none for Y
+            bodyVelocity.Parent = humanoidRootPart
+        end
+
+        -- Update visualization part position
+        visualizationPart.Position = ballPart.Position
+
+        -- Function to update force direction
+        local function updateForce()
+            local ballPosition = ballPart.Position
+            local playerPosition = humanoidRootPart.Position
+            
+            -- Calculate direction (ignore vertical component)
+            local direction = (Vector3.new(ballPosition.X, playerPosition.Y, ballPosition.Z) - playerPosition).Unit
+            
+            -- Apply force (affect X and Z velocity)
+            bodyVelocity.Velocity = Vector3.new(direction.X * 15, 0, direction.Z * 25) -- Adjust force value as needed
+            
+            -- Update visualization part position
+            visualizationPart.Position = ballPosition
+            
+            -- Check distance and remove BodyVelocity if within 2 studs
+            if (humanoidRootPart.Position - ballPart.Position).Magnitude < 2 then
+                bodyVelocity:Destroy()
+                RunService:UnbindFromRenderStep("UpdateForce")
+                visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
+            end
+        end
+        
+        -- Bind to render step to continuously update force direction
+        RunService:BindToRenderStep("UpdateForce", Enum.RenderPriority.Character.Value + 1, updateForce)
+        
+        -- Function to stop the glide sequence
+        local function stopGlide()
+            if bodyVelocity.Parent then
+                bodyVelocity:Destroy()
+                RunService:UnbindFromRenderStep("UpdateForce")
+                visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
+            end
+        end
+
+        -- Unbind on mouse button 1 press or other specified keys
+        local function handleInput(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+               input.KeyCode == Enum.KeyCode.F or 
+               input.KeyCode == Enum.KeyCode.R or 
+               input.KeyCode == Enum.KeyCode.Two then
+                stopGlide()
+                inputConnection:Disconnect()
+            end
+        end
+
+        local inputConnection = UserInputService.InputBegan:Connect(handleInput)
+
+        -- Remove BodyVelocity after 1.5 seconds
+        delay(1.5, stopGlide)
+    end
+end
+
+-- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, and ball trajectory
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
+local MainFrame = Instance.new("Frame")
+local CreditsLabel = Instance.new("TextLabel")
+local ToggleButton = Instance.new("TextButton")
+local CourtButton1 = Instance.new("TextButton")
+local CourtButton2 = Instance.new("TextButton")
+local CourtButton3 = Instance.new("TextButton")
+local SpeedToggleButton = Instance.new("TextButton")
+local SpeedMultiplierLabel = Instance.new("TextLabel")
+local SpeedMultiplierBox = Instance.new("TextBox")
+local JumpToggleButton = Instance.new("TextButton")
+local JumpHeightLabel = Instance.new("TextLabel")
+local JumpHeightBox = Instance.new("TextBox")
+local TiltToggleButton = Instance.new("TextButton")
+local TiltValueLabel = Instance.new("TextLabel")
+local TiltValueBox = Instance.new("TextBox")
+local AutolockToggleButton = Instance.new("TextButton")
+local BallTrajectoryButton = Instance.new("TextButton")
+
+-- Setup MainFrame
+MainFrame.Size = UDim2.new(0, 450, 0, 400) -- Increased height for new button
+MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Setup CreditsLabel
+CreditsLabel.Size = UDim2.new(0, 100, 0, 50)
+CreditsLabel.Position = UDim2.new(0, 80, 0, -15)
+CreditsLabel.Text = "made by hzsh and chatgpt - toggle ui with insert"
+CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+CreditsLabel.BackgroundTransparency = 1
+CreditsLabel.Parent = MainFrame
+
+-- Setup ToggleButton
+ToggleButton.Size = UDim2.new(0, 100, 0, 50)
+ToggleButton.Position = UDim2.new(0, 10, 0, 25)
+ToggleButton.Text = "Glide Ball"
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.Parent = MainFrame
+
+-- Setup CourtButton1
+CourtButton1.Size = UDim2.new(0, 100, 0, 50)
+CourtButton1.Position = UDim2.new(0, 120, 0, 25)
+CourtButton1.Text = "Court 1"
+CourtButton1.Parent = MainFrame
+
+-- Setup CourtButton2
+CourtButton2.Size = UDim2.new(0, 100, 0, 50)
+CourtButton2.Position = UDim2.new(0, 230, 0, 25)
+CourtButton2.Text = "Court 2"
+CourtButton2.Parent = MainFrame
+
+-- Setup CourtButton3
+CourtButton3.Size = UDim2.new(0, 100, 0, 50)
+CourtButton3.Position = UDim2.new(0, 340, 0, 25)
+CourtButton3.Text = "Court 3"
+CourtButton3.Parent = MainFrame
+
+-- Setup SpeedToggleButton
+SpeedToggleButton.Size = UDim2.new(0, 100, 0, 50)
+SpeedToggleButton.Position = UDim2.new(0, 10, 0, 85)
+SpeedToggleButton.Text = "Walkspeed"
+SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SpeedToggleButton.Parent = MainFrame
+
+-- Setup SpeedMultiplierLabel
+SpeedMultiplierLabel.Size = UDim2.new(0, 100, 0, 50)
+SpeedMultiplierLabel.Position = UDim2.new(0, 120, 0, 85)
+SpeedMultiplierLabel.Text = "Multiplier:"
+SpeedMultiplierLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedMultiplierLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SpeedMultiplierLabel.Parent = MainFrame
+
+-- Setup SpeedMultiplierBox
+SpeedMultiplierBox.Size = UDim2.new(0, 100, 0, 50)
+SpeedMultiplierBox.Position = UDim2.new(0, 230, 0, 85)
+SpeedMultiplierBox.Text = tostring(speedMultiplier)
+SpeedMultiplierBox.Parent = MainFrame
+
+-- Setup JumpToggleButton
+JumpToggleButton.Size = UDim2.new(0, 100, 0, 50)
+JumpToggleButton.Position = UDim2.new(0, 10, 0, 145)
+JumpToggleButton.Text = "Jumpheight"
+JumpToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+JumpToggleButton.Parent = MainFrame
+
+-- Setup JumpHeightLabel
+JumpHeightLabel.Size = UDim2.new(0, 100, 0, 50)
+JumpHeightLabel.Position = UDim2.new(0, 120, 0, 145)
+JumpHeightLabel.Text = "Jump Height:"
+JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+JumpHeightLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+JumpHeightLabel.Parent = MainFrame
+
+-- Setup JumpHeightBox
+JumpHeightBox.Size = UDim2.new(0, 100, 0, 50)
+JumpHeightBox.Position = UDim2.new(0, 230, 0, 145)
+JumpHeightBox.Text = tostring(jumpHeight)
+JumpHeightBox.Parent = MainFrame
+
+-- Setup TiltToggleButton
+TiltToggleButton.Size = UDim2.new(0, 100, 0, 50)
+TiltToggleButton.Position = UDim2.new(0, 10, 0, 205)
+TiltToggleButton.Text = "Tilt Changer"
+TiltToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+TiltToggleButton.Parent = MainFrame
+
+-- Setup TiltValueLabel
+TiltValueLabel.Size = UDim2.new(0, 100, 0, 50)
+TiltValueLabel.Position = UDim2.new(0, 120, 0, 205)
+TiltValueLabel.Text = "Tilt Value:"
+TiltValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TiltValueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TiltValueLabel.Parent = MainFrame
+
+-- Setup TiltValueBox
+TiltValueBox.Size = UDim2.new(0, 100, 0, 50)
+TiltValueBox.Position = UDim2.new(0, 230, 0, 205)
+TiltValueBox.Text = tostring(tiltValue)
+TiltValueBox.Parent = MainFrame
+
+-- Setup AutolockToggleButton
+AutolockToggleButton.Size = UDim2.new(0, 100, 0, 50)
+AutolockToggleButton.Position = UDim2.new(0, 10, 0, 265)
+AutolockToggleButton.Text = "Autolock"
+AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+AutolockToggleButton.Parent = MainFrame
+
+-- Setup BallTrajectoryButton
+BallTrajectoryButton.Size = UDim2.new(0, 100, 0, 50)
+BallTrajectoryButton.Position = UDim2.new(0, 10, 0, 325)
+BallTrajectoryButton.Text = "Ball Trajectory"
+BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+BallTrajectoryButton.Parent = MainFrame
+
+-- Toggle button actions
+ToggleButton.MouseButton1Click:Connect(function()
+    scriptEnabled = not scriptEnabled
+    if scriptEnabled then
+        print("Glide Ball Enabled")
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Glide Ball Disabled")
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end)
+
+-- Function to handle speed multiplier toggle
+local function toggleSpeedMultiplier()
+    speedScriptEnabled = not speedScriptEnabled
+    if speedScriptEnabled then
+        print("Speed Multiplier Enabled")
+        SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Speed Multiplier Disabled")
+        SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Update speed multiplier value
+local function updateSpeedMultiplier(textBox)
+    local newMultiplier = tonumber(textBox.Text)
+    if newMultiplier then
+        speedMultiplier = newMultiplier
+    else
+            print("Invalid multiplier value")
+    end
+end
+
+-- Apply speed multiplier
+RunService.Stepped:Connect(function()
+    if speedScriptEnabled then
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame + character.Humanoid.MoveDirection * speedMultiplier
+    end
+end)
+
+-- Function to handle jump height toggle
+local function toggleJumpHeight()
+    jumpScriptEnabled = not jumpScriptEnabled
+    if jumpScriptEnabled then
+        print("Jump Height Enabled")
+        JumpToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Jump Height Disabled")
+        JumpToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Update jump height value
+local function updateJumpHeight(textBox)
+    local newHeight = tonumber(textBox.Text)
+    if newHeight then
+        jumpHeight = newHeight
+    else
+        print("Invalid jump height value")
+    end
+end
+
+-- Apply jump height on space press
+UserInputService.InputBegan:Connect(function(input, isProcessed)
+    if isProcessed then return end -- Ignore if the event is already processed
+    if input.KeyCode == Enum.KeyCode.Space and jumpScriptEnabled then
+        wait(0.5)
+        humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, jumpHeight, 0)
+    end
+end)
+
+-- Function to handle tilt value toggle
+local function toggleTilt()
+    tiltScriptEnabled = not tiltScriptEnabled
+    if tiltScriptEnabled then
+        print("Tilt Changer Enabled")
+        TiltToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Tilt Changer Disabled")
+        TiltToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Update tilt value
+local function updateTiltValue(textBox)
+    local newTilt = tonumber(textBox.Text)
+    if newTilt then
+        tiltValue = newTilt
+    else
+        print("Invalid tilt value")
+    end
+end
+
+-- Apply tilt value
+RunService.Heartbeat:Connect(function()
+    if tiltScriptEnabled then
+        local textLabel = player:FindFirstChild("PlayerGui")
+            and player.PlayerGui:FindFirstChild("PowerStam")
+            and player.PlayerGui.PowerStam:FindFirstChild("Main")
+            and player.PlayerGui.PowerStam.Main:FindFirstChild("TextLabel")
+        
+        if textLabel then
+            if textLabel.Text == "SPIKE" then
+                humanoidRootPart.Tilt.P = tiltValue
+            elseif textLabel.Text == "BLOCK" then
+                humanoidRootPart.Tilt.P = 3000
+            end
+        end
+    end
+end)
+
+CourtButton1.MouseButton1Click:Connect(function()
+    currentCourtIndex = 1
+    print("Switched to InCourt1")
+end)
+
+CourtButton2.MouseButton1Click:Connect(function()
+    currentCourtIndex = 2
+    print("Switched to InCourt2")
+end)
+
+CourtButton3.MouseButton1Click:Connect(function()
+    currentCourtIndex = 3
+    print("Switched to InCourt3")
+end)
+
+SpeedToggleButton.MouseButton1Click:Connect(toggleSpeedMultiplier)
+SpeedMultiplierBox.FocusLost:Connect(function()
+    updateSpeedMultiplier(SpeedMultiplierBox)
+end)
+
+JumpToggleButton.MouseButton1Click:Connect(toggleJumpHeight)
+JumpHeightBox.FocusLost:Connect(function()
+    updateJumpHeight(JumpHeightBox)
+end)
+
+TiltToggleButton.MouseButton1Click:Connect(toggleTilt)
+TiltValueBox.FocusLost:Connect(function()
+    updateTiltValue(TiltValueBox)
+end)
+
+-- Detect Insert key press to toggle the GUI visibility
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Insert and not gameProcessed then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
+
+-- Detect space bar press for applying force towards the ball
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Space and not gameProcessed and scriptEnabled then
+        applyForceTowardsBall()
+    end
+end)
+
+-- Autolock Functionality
+local function toggleAutolock()
+    autolockEnabled = not autolockEnabled
+    if autolockEnabled then
+        print("Autolock Enabled")
+        AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Autolock Disabled")
+        AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+local function handleAutolockInput(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.Space and autolockEnabled then
+        if player:GetAttribute("isShiftLock") then -- if shiftlock was on
+            wait(0.45)
+            player:SetAttribute("isShiftLock", false)
+            print("shiftlock was on")
+        else -- if shiftlock was off
+            wait(0.35)
+            player:SetAttribute("isShiftLock", true)
+            wait(0.1)
+            player:SetAttribute("isShiftLock", false)
+            print("shiftlock was off")
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(handleAutolockInput)
+AutolockToggleButton.MouseButton1Click:Connect(toggleAutolock)
+
+-- Ball Trajectory Functionality
+local function PHYSICS_STUFF(velocity, position)
+    local acceleration = -workspace.Gravity
+    local timeToLand = (-velocity.y - math.sqrt(velocity.y * velocity.y - 4 * 0.5 * acceleration * position.y)) / (2 * 0.5 * acceleration)
+    local horizontalVelocity = Vector3.new(velocity.x, 0, velocity.z)
+    local landingPosition = position + horizontalVelocity * timeToLand + Vector3.new(0, -position.y, 0)
+    return landingPosition
+end
+
+local function Ball_Prediction(obj)
+    RunService:BindToRenderStep("VisualizeLandingPosition", Enum.RenderPriority.Camera.Value, function()
+        for _, ballModel in ipairs(workspace:GetDescendants()) do
+            if ballModel:IsA("Model") and ballModel.Name == "Ball" then
+                local ball = ballModel:FindFirstChild(tostring(obj))
+                if ball and not ball:FindFirstChild("Marker") then
+                    local Marker = Instance.new("Part")
+                    Marker.Name = "Marker"
+                    Marker.Size = Vector3.new(3, 3, 3)
+                    Marker.Shape = Enum.PartType.Ball
+                    Marker.BrickColor = BrickColor.new("Toothpaste")
+                    Marker.CanCollide = false
+                    Marker.Anchored = true
+                    Marker.Parent = ball
+                    Marker.Material = Enum.Material.Neon
+                    Marker.Transparency = 0
+                end
+                local initialVelocity = ballModel.Velocity
+                local landingPosition = PHYSICS_STUFF(initialVelocity.Value, ball.Position)
+                ball:FindFirstChild("Marker").CFrame = CFrame.new(landingPosition)
+                if ballModel:FindFirstChild("Marker") then
+                    ball:FindFirstChild("Marker"):Destroy()
+                end
+            end
+        end
+    end)
+end
+
+-- Toggle ball trajectory prediction
+local function toggleBallTrajectory()
+    ballTrajectoryEnabled = not ballTrajectoryEnabled
+    if ballTrajectoryEnabled then
+        print("Ball Trajectory Enabled")
+        Ball_Prediction("Ball")
+        BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Ball Trajectory Disabled")
+        RunService:UnbindFromRenderStep("VisualizeLandingPosition")
+        BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+BallTrajectoryButton.MouseButton1Click:Connect(toggleBallTrajectory)
