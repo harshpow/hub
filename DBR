@@ -1,1 +1,205 @@
-print("DBR")
+-- Path: LocalScript inside StarterPlayerScripts or StarterCharacterScripts
+
+-- Get services
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- Get local player
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- Speed multiplier variable
+local speedScriptEnabled = false
+local speedMultiplier = 0.015
+
+-- Highlight models variable
+local highlightModelsEnabled = false
+
+-- Highlight generators variable
+local highlightGeneratorsEnabled = false
+
+-- Function to add highlight to models
+local function addHighlightToModels()
+    for _, model in pairs(Workspace:GetChildren()) do
+        if model:IsA("Model") and (model.Name:sub(1, 6) == "Pallet" or model.Name:sub(1, 6) == "Window") then
+            local highlight = Instance.new("Highlight")
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+            highlight.FillTransparency = 0.8
+            highlight.OutlineTransparency = 0.9
+            highlight.Parent = model
+        end
+    end
+end
+
+-- Function to remove highlights from models
+local function removeHighlightFromModels()
+    for _, model in pairs(Workspace:GetChildren()) do
+        if model:IsA("Model") then
+            local highlight = model:FindFirstChildOfClass("Highlight")
+            if highlight then
+                highlight:Destroy()
+            end
+        end
+    end
+end
+
+-- Function to add highlight to generators
+local function addHighlightToGenerators()
+    for _, model in pairs(Workspace:GetChildren()) do
+        if model:IsA("Model") and model.Name:sub(1, 9) == "Generator" then
+            local highlight = Instance.new("Highlight")
+            highlight.FillColor = Color3.fromRGB(0, 0, 255)
+            highlight.FillTransparency = 0.8
+            highlight.OutlineTransparency = 0.9
+            highlight.Parent = model
+        end
+    end
+end
+
+-- Function to remove highlights from generators
+local function removeHighlightFromGenerators()
+    for _, model in pairs(Workspace:GetChildren()) do
+        if model:IsA("Model") then
+            local highlight = model:FindFirstChildOfClass("Highlight")
+            if highlight and highlight.FillColor == Color3.fromRGB(0, 0, 255) then
+                highlight:Destroy()
+            end
+        end
+    end
+end
+
+-- Create GUI for toggling the speed multiplier and highlighting models
+local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
+local MainFrame = Instance.new("Frame")
+local CreditsLabel = Instance.new("TextLabel")
+local SpeedToggleButton = Instance.new("TextButton")
+local SpeedMultiplierLabel = Instance.new("TextLabel")
+local SpeedMultiplierBox = Instance.new("TextBox")
+local HighlightToggleButton = Instance.new("TextButton")
+local GeneratorHighlightToggleButton = Instance.new("TextButton")
+
+-- Setup MainFrame
+MainFrame.Size = UDim2.new(0, 450, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
+MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+-- Setup CreditsLabel
+CreditsLabel.Size = UDim2.new(0, 400, 0, 50)
+CreditsLabel.Position = UDim2.new(0, -70, 0, -15)
+CreditsLabel.Text = "made by hzsh and chatgpt - toggle ui with insert"
+CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+CreditsLabel.BackgroundTransparency = 1
+CreditsLabel.Parent = MainFrame
+
+-- Setup SpeedToggleButton
+SpeedToggleButton.Size = UDim2.new(0, 100, 0, 50)
+SpeedToggleButton.Position = UDim2.new(0, 10, 0, 25)
+SpeedToggleButton.Text = "Walkspeed"
+SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SpeedToggleButton.Parent = MainFrame
+
+-- Setup SpeedMultiplierLabel
+SpeedMultiplierLabel.Size = UDim2.new(0, 100, 0, 50)
+SpeedMultiplierLabel.Position = UDim2.new(0, 120, 0, 25)
+SpeedMultiplierLabel.Text = "Multiplier:"
+SpeedMultiplierLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedMultiplierLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SpeedMultiplierLabel.Parent = MainFrame
+
+-- Setup SpeedMultiplierBox
+SpeedMultiplierBox.Size = UDim2.new(0, 100, 0, 50)
+SpeedMultiplierBox.Position = UDim2.new(0, 230, 0, 25)
+SpeedMultiplierBox.Text = tostring(speedMultiplier)
+SpeedMultiplierBox.Parent = MainFrame
+
+-- Setup HighlightToggleButton
+HighlightToggleButton.Size = UDim2.new(0, 100, 0, 50)
+HighlightToggleButton.Position = UDim2.new(0, 10, 0, 85)
+HighlightToggleButton.Text = "Obstacle ESP"
+HighlightToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+HighlightToggleButton.Parent = MainFrame
+
+-- Setup GeneratorHighlightToggleButton
+GeneratorHighlightToggleButton.Size = UDim2.new(0, 100, 0, 50)
+GeneratorHighlightToggleButton.Position = UDim2.new(0, 10, 0, 145)
+GeneratorHighlightToggleButton.Text = "Generator ESP"
+GeneratorHighlightToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+GeneratorHighlightToggleButton.Parent = MainFrame
+
+-- Function to handle speed multiplier toggle
+local function toggleSpeedMultiplier()
+    speedScriptEnabled = not speedScriptEnabled
+    if speedScriptEnabled then
+        print("Speed Multiplier Enabled")
+        SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Speed Multiplier Disabled")
+        SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Update speed multiplier value
+local function updateSpeedMultiplier(textBox)
+    local newMultiplier = tonumber(textBox.Text)
+    if newMultiplier then
+        speedMultiplier = newMultiplier
+    else
+        print("Invalid multiplier value")
+    end
+end
+
+-- Apply speed multiplier
+RunService.Stepped:Connect(function()
+    if speedScriptEnabled then
+        humanoidRootPart.CFrame = humanoidRootPart.CFrame + character.Humanoid.MoveDirection * speedMultiplier
+    end
+end)
+
+-- Function to handle highlighting models toggle
+local function toggleHighlightModels()
+    highlightModelsEnabled = not highlightModelsEnabled
+    if highlightModelsEnabled then
+        addHighlightToModels()
+        print("Highlight Models Enabled")
+        HighlightToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        removeHighlightFromModels()
+        print("Highlight Models Disabled")
+        HighlightToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+-- Function to handle highlighting generators toggle
+local function toggleHighlightGenerators()
+    highlightGeneratorsEnabled = not highlightGeneratorsEnabled
+    if highlightGeneratorsEnabled then
+        addHighlightToGenerators()
+        print("Highlight Generators Enabled")
+        GeneratorHighlightToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        removeHighlightFromGenerators()
+        print("Highlight Generators Disabled")
+        GeneratorHighlightToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+SpeedToggleButton.MouseButton1Click:Connect(toggleSpeedMultiplier)
+SpeedMultiplierBox.FocusLost:Connect(function()
+    updateSpeedMultiplier(SpeedMultiplierBox)
+end)
+
+HighlightToggleButton.MouseButton1Click:Connect(toggleHighlightModels)
+GeneratorHighlightToggleButton.MouseButton1Click:Connect(toggleHighlightGenerators)
+
+-- Detect Insert key press to toggle the GUI visibility
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.Insert and not gameProcessed then
+        MainFrame.Visible = not MainFrame.Visible
+    end
+end)
