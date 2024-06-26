@@ -1,5 +1,5 @@
 if game.PlaceId == 6734275465 then -- bvl
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/BVL?token=GHSAT0AAAAAACTXYYTZXJBBLPGHASURX5LKZT364SA'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/BVL'))()
 elseif game.PlaceId == 14904820737 then -- dbr
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/DBR?token=GHSAT0AAAAAACTXYYTZHZJN3J2DMROW3KS6ZT365YA'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/DBR'))()
 end
