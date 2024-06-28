@@ -29,6 +29,7 @@ local tiltScriptEnabled = false
 local tiltValue = 3500 -- Default tilt value
 local autolockEnabled = false
 local ballTrajectoryEnabled = false
+local overlapScriptEnabled = false
 
 -- Function to create a visualization part
 local function createVisualizationPart()
@@ -157,7 +158,62 @@ local function applyForceTowardsBall()
     end
 end
 
--- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, and ball trajectory
+-- Path to the frames
+local powerStamGui = player:WaitForChild("PlayerGui"):WaitForChild("PowerStam"):WaitForChild("Spin")
+local stationaryFrame = powerStamGui:WaitForChild("ImageLabel"):WaitForChild("Frame")
+local movingFrame = powerStamGui:WaitForChild("Dot")
+
+-- Variables to track overlap state
+local overlapCount = 0
+local previousOverlapState = false
+
+-- Function to check if two frames overlap
+local function framesOverlap(frame1, frame2)
+    local f1Pos = frame1.AbsolutePosition
+    local f1Size = frame1.AbsoluteSize
+    local f2Pos = frame2.AbsolutePosition
+    local f2Size = frame2.AbsoluteSize
+    
+    return f1Pos.X < f2Pos.X + f2Size.X and
+           f1Pos.X + f1Size.X > f2Pos.X and
+           f1Pos.Y < f2Pos.Y + f2Size.Y and
+           f1Pos.Y + f1Size.Y > f2Pos.Y
+end
+
+-- Function to handle the overlap event
+local function onOverlap()
+    overlapCount = overlapCount + 1
+    if overlapCount == 2 or overlapCount == 3 then
+        print("overlapped")
+        mouse1click()
+    end
+end
+
+-- Function to check for overlap and handle the logic
+local function checkOverlap()
+    if overlapScriptEnabled then
+        local currentOverlapState = framesOverlap(stationaryFrame, movingFrame)
+        
+        if powerStamGui.Visible and currentOverlapState and not previousOverlapState then
+            onOverlap()
+        end
+        
+        previousOverlapState = currentOverlapState
+    end
+end
+
+-- Reset the overlap count when Spin becomes invisible
+powerStamGui:GetPropertyChangedSignal("Visible"):Connect(function()
+    if not powerStamGui.Visible then
+        overlapCount = 0
+        previousOverlapState = false
+    end
+end)
+
+-- Continuously check for overlap
+RunService.RenderStepped:Connect(checkOverlap)
+
+-- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, and overlap detection
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 local MainFrame = Instance.new("Frame")
 local CreditsLabel = Instance.new("TextLabel")
@@ -176,9 +232,10 @@ local TiltValueLabel = Instance.new("TextLabel")
 local TiltValueBox = Instance.new("TextBox")
 local AutolockToggleButton = Instance.new("TextButton")
 local BallTrajectoryButton = Instance.new("TextButton")
+local OverlapToggleButton = Instance.new("TextButton")
 
 -- Setup MainFrame
-MainFrame.Size = UDim2.new(0, 450, 0, 400) -- Increased height for new button
+MainFrame.Size = UDim2.new(0, 450, 0, 460) -- Increased height for new button
 MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
 MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MainFrame.Active = true
@@ -204,18 +261,21 @@ ToggleButton.Parent = MainFrame
 CourtButton1.Size = UDim2.new(0, 100, 0, 50)
 CourtButton1.Position = UDim2.new(0, 120, 0, 25)
 CourtButton1.Text = "Court 1"
+CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton1.Parent = MainFrame
 
 -- Setup CourtButton2
 CourtButton2.Size = UDim2.new(0, 100, 0, 50)
 CourtButton2.Position = UDim2.new(0, 230, 0, 25)
 CourtButton2.Text = "Court 2"
+CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton2.Parent = MainFrame
 
 -- Setup CourtButton3
 CourtButton3.Size = UDim2.new(0, 100, 0, 50)
 CourtButton3.Position = UDim2.new(0, 340, 0, 25)
 CourtButton3.Text = "Court 3"
+CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton3.Parent = MainFrame
 
 -- Setup SpeedToggleButton
@@ -249,7 +309,7 @@ JumpToggleButton.Parent = MainFrame
 -- Setup JumpHeightLabel
 JumpHeightLabel.Size = UDim2.new(0, 100, 0, 50)
 JumpHeightLabel.Position = UDim2.new(0, 120, 0, 145)
-JumpHeightLabel.Text = "Jump Height:"
+JumpHeightLabel.Text = "Extra Studs:"
 JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpHeightLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 JumpHeightLabel.Parent = MainFrame
@@ -270,7 +330,7 @@ TiltToggleButton.Parent = MainFrame
 -- Setup TiltValueLabel
 TiltValueLabel.Size = UDim2.new(0, 100, 0, 50)
 TiltValueLabel.Position = UDim2.new(0, 120, 0, 205)
-TiltValueLabel.Text = "Tilt Value:"
+TiltValueLabel.Text = "Tilt:"
 TiltValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TiltValueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 TiltValueLabel.Parent = MainFrame
@@ -284,7 +344,7 @@ TiltValueBox.Parent = MainFrame
 -- Setup AutolockToggleButton
 AutolockToggleButton.Size = UDim2.new(0, 100, 0, 50)
 AutolockToggleButton.Position = UDim2.new(0, 10, 0, 265)
-AutolockToggleButton.Text = "Autolock"
+AutolockToggleButton.Text = "Auto S.lock"
 AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 AutolockToggleButton.Parent = MainFrame
 
@@ -294,6 +354,13 @@ BallTrajectoryButton.Position = UDim2.new(0, 10, 0, 325)
 BallTrajectoryButton.Text = "Ball Trajectory"
 BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 BallTrajectoryButton.Parent = MainFrame
+
+-- Setup OverlapToggleButton
+OverlapToggleButton.Size = UDim2.new(0, 100, 0, 50)
+OverlapToggleButton.Position = UDim2.new(0, 10, 0, 385)
+OverlapToggleButton.Text = "Auto Float"
+OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+OverlapToggleButton.Parent = MainFrame
 
 -- Toggle button actions
 ToggleButton.MouseButton1Click:Connect(function()
@@ -311,10 +378,10 @@ end)
 local function toggleSpeedMultiplier()
     speedScriptEnabled = not speedScriptEnabled
     if speedScriptEnabled then
-        print("Speed Multiplier Enabled")
+        print("Walkspeed Enabled")
         SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Speed Multiplier Disabled")
+        print("Walkspeed Disabled")
         SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
 end
@@ -409,16 +476,25 @@ end)
 
 CourtButton1.MouseButton1Click:Connect(function()
     currentCourtIndex = 1
+    CourtButton1.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     print("Switched to InCourt1")
 end)
 
 CourtButton2.MouseButton1Click:Connect(function()
     currentCourtIndex = 2
+    CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    CourtButton2.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     print("Switched to InCourt2")
 end)
 
 CourtButton3.MouseButton1Click:Connect(function()
     currentCourtIndex = 3
+    CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    CourtButton3.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     print("Switched to InCourt3")
 end)
 
@@ -536,3 +612,17 @@ local function toggleBallTrajectory()
 end
 
 BallTrajectoryButton.MouseButton1Click:Connect(toggleBallTrajectory)
+
+-- Toggle overlap script
+local function toggleOverlapScript()
+    overlapScriptEnabled = not overlapScriptEnabled
+    if overlapScriptEnabled then
+        print("Auto Float Enabled")
+        OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        print("Auto Float Disabled")
+        OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+OverlapToggleButton.MouseButton1Click:Connect(toggleOverlapScript)
