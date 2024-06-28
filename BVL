@@ -166,18 +166,19 @@ local movingFrame = powerStamGui:WaitForChild("Dot")
 -- Variables to track overlap state
 local overlapCount = 0
 local previousOverlapState = false
+local margin = 0.3 -- Margin for more central overlap
 
 -- Function to check if two frames overlap
-local function framesOverlap(frame1, frame2)
+local function framesOverlap(frame1, frame2, margin)
     local f1Pos = frame1.AbsolutePosition
     local f1Size = frame1.AbsoluteSize
     local f2Pos = frame2.AbsolutePosition
     local f2Size = frame2.AbsoluteSize
     
-    return f1Pos.X < f2Pos.X + f2Size.X and
-           f1Pos.X + f1Size.X > f2Pos.X and
-           f1Pos.Y < f2Pos.Y + f2Size.Y and
-           f1Pos.Y + f1Size.Y > f2Pos.Y
+    return f1Pos.X + f1Size.X * margin < f2Pos.X + f2Size.X * (1 - margin) and
+           f1Pos.X + f1Size.X * (1 - margin) > f2Pos.X + f2Size.X * margin and
+           f1Pos.Y + f1Size.Y * margin < f2Pos.Y + f2Size.Y * (1 - margin) and
+           f1Pos.Y + f1Size.Y * (1 - margin) > f2Pos.Y + f2Size.Y * margin
 end
 
 -- Function to handle the overlap event
@@ -192,7 +193,7 @@ end
 -- Function to check for overlap and handle the logic
 local function checkOverlap()
     if overlapScriptEnabled then
-        local currentOverlapState = framesOverlap(stationaryFrame, movingFrame)
+        local currentOverlapState = framesOverlap(stationaryFrame, movingFrame, margin)
         
         if powerStamGui.Visible and currentOverlapState and not previousOverlapState then
             onOverlap()
@@ -238,14 +239,15 @@ local OverlapToggleButton = Instance.new("TextButton")
 MainFrame.Size = UDim2.new(0, 450, 0, 460) -- Increased height for new button
 MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
 MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+MainFrame.BackgroundTransparency = 0.2
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
 -- Setup CreditsLabel
 CreditsLabel.Size = UDim2.new(0, 100, 0, 50)
-CreditsLabel.Position = UDim2.new(0, 80, 0, -15)
-CreditsLabel.Text = "made by hzsh and chatgpt - toggle ui with insert"
+CreditsLabel.Position = UDim2.new(0, 110, 0, -15)
+CreditsLabel.Text = "harsh's world | INSERT toggle UI | v.1.0.0 | .gg/vF24gXQw2Z"
 CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
