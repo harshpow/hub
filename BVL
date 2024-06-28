@@ -86,6 +86,11 @@ local function applyForceTowardsBall()
         end
     end
 
+    local powerTextLabel = gui.Main:FindFirstChild("Power") and gui.Main.Power:FindFirstChild("TextLabel")
+    if powerTextLabel and powerTextLabel.Text ~= "15/15" then
+        return
+    end
+
     local ballPart = getClosestBall()
     if ballPart then
         -- Create or update BodyVelocity to apply force
