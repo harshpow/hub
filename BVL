@@ -31,6 +31,91 @@ local autolockEnabled = false
 local ballTrajectoryEnabled = false
 local overlapScriptEnabled = false
 
+-- Define settings file path
+local settingsFilePath = "harshs_world_BVL.txt"
+
+-- Ball Trajectory Functionality
+local function PHYSICS_STUFF(velocity, position)
+    local acceleration = -workspace.Gravity
+    local timeToLand = (-velocity.y - math.sqrt(velocity.y * velocity.y - 4 * 0.5 * acceleration * position.y)) / (2 * 0.5 * acceleration)
+    local horizontalVelocity = Vector3.new(velocity.x, 0, velocity.z)
+    local landingPosition = position + horizontalVelocity * timeToLand + Vector3.new(0, -position.y, 0)
+    return landingPosition
+end
+
+local function Ball_Prediction(obj)
+    RunService:BindToRenderStep("VisualizeLandingPosition", Enum.RenderPriority.Camera.Value, function()
+        for _, ballModel in ipairs(workspace:GetDescendants()) do
+            if ballModel:IsA("Model") and ballModel.Name == "Ball" then
+                local ball = ballModel:FindFirstChild(tostring(obj))
+                if ball and not ball:FindFirstChild("Marker") then
+                    local Marker = Instance.new("Part")
+                    Marker.Name = "Marker"
+                    Marker.Size = Vector3.new(3, 3, 3)
+                    Marker.Shape = Enum.PartType.Ball
+                    Marker.BrickColor = BrickColor.new("Toothpaste")
+                    Marker.CanCollide = false
+                    Marker.Anchored = true
+                    Marker.Parent = ball
+                    Marker.Material = Enum.Material.Neon
+                    Marker.Transparency = 0
+                end
+                local initialVelocity = ballModel.Velocity
+                local landingPosition = PHYSICS_STUFF(initialVelocity.Value, ball.Position)
+                ball:FindFirstChild("Marker").CFrame = CFrame.new(landingPosition)
+                if ballModel:FindFirstChild("Marker") then
+                    ball:FindFirstChild("Marker"):Destroy()
+                end
+            end
+        end
+    end)
+end
+
+-- Function to save settings to a file
+local function saveSettings()
+    local settings = {
+        scriptEnabled = scriptEnabled,
+        speedScriptEnabled = speedScriptEnabled,
+        speedMultiplier = speedMultiplier,
+        jumpScriptEnabled = jumpScriptEnabled,
+        jumpHeight = jumpHeight,
+        tiltScriptEnabled = tiltScriptEnabled,
+        tiltValue = tiltValue,
+        autolockEnabled = autolockEnabled,
+        ballTrajectoryEnabled = ballTrajectoryEnabled,
+        overlapScriptEnabled = overlapScriptEnabled
+    }
+    local settingsString = game:GetService("HttpService"):JSONEncode(settings)
+    writefile(settingsFilePath, settingsString)
+end
+
+-- Function to load settings from a file
+local function loadSettings()
+    if isfile(settingsFilePath) then
+        local settingsString = readfile(settingsFilePath)
+        local settings = game:GetService("HttpService"):JSONDecode(settingsString)
+        scriptEnabled = settings.scriptEnabled
+        speedScriptEnabled = settings.speedScriptEnabled
+        speedMultiplier = settings.speedMultiplier
+        jumpScriptEnabled = settings.jumpScriptEnabled
+        jumpHeight = settings.jumpHeight
+        tiltScriptEnabled = settings.tiltScriptEnabled
+        tiltValue = settings.tiltValue
+        autolockEnabled = settings.autolockEnabled
+        ballTrajectoryEnabled = settings.ballTrajectoryEnabled
+        overlapScriptEnabled = settings.overlapScriptEnabled
+
+        -- Initialize ball trajectory if enabled
+        if ballTrajectoryEnabled then
+            Ball_Prediction("Ball")
+        end
+    end
+end
+
+-- Load settings on script start
+loadSettings()
+print("[+] loaded config")
+
 -- Function to create a visualization part
 local function createVisualizationPart()
     local part = Instance.new("Part")
@@ -185,7 +270,6 @@ end
 local function onOverlap()
     overlapCount = overlapCount + 1
     if overlapCount == 2 or overlapCount == 3 then
-        print("overlapped")
         mouse1click()
     end
 end
@@ -247,7 +331,7 @@ MainFrame.Parent = ScreenGui
 -- Setup CreditsLabel
 CreditsLabel.Size = UDim2.new(0, 100, 0, 50)
 CreditsLabel.Position = UDim2.new(0, 110, 0, -15)
-CreditsLabel.Text = "harsh's world | INSERT toggle UI | v.1.0.0 | .gg/vF24gXQw2Z"
+CreditsLabel.Text = "harsh's world | v.2.0.0 | INSERT toggle UI | .gg/vF24gXQw2Z"
 CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
@@ -255,8 +339,8 @@ CreditsLabel.Parent = MainFrame
 -- Setup ToggleButton
 ToggleButton.Size = UDim2.new(0, 100, 0, 50)
 ToggleButton.Position = UDim2.new(0, 10, 0, 25)
-ToggleButton.Text = "Glide Ball"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.Text = "Ball Glide"
+ToggleButton.BackgroundColor3 = scriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 ToggleButton.Parent = MainFrame
 
 -- Setup CourtButton1
@@ -284,13 +368,13 @@ CourtButton3.Parent = MainFrame
 SpeedToggleButton.Size = UDim2.new(0, 100, 0, 50)
 SpeedToggleButton.Position = UDim2.new(0, 10, 0, 85)
 SpeedToggleButton.Text = "Walkspeed"
-SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+SpeedToggleButton.BackgroundColor3 = speedScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 SpeedToggleButton.Parent = MainFrame
 
 -- Setup SpeedMultiplierLabel
 SpeedMultiplierLabel.Size = UDim2.new(0, 100, 0, 50)
 SpeedMultiplierLabel.Position = UDim2.new(0, 120, 0, 85)
-SpeedMultiplierLabel.Text = "Multiplier:"
+SpeedMultiplierLabel.Text = "Speed:"
 SpeedMultiplierLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedMultiplierLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SpeedMultiplierLabel.Parent = MainFrame
@@ -305,13 +389,13 @@ SpeedMultiplierBox.Parent = MainFrame
 JumpToggleButton.Size = UDim2.new(0, 100, 0, 50)
 JumpToggleButton.Position = UDim2.new(0, 10, 0, 145)
 JumpToggleButton.Text = "Jumpheight"
-JumpToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+JumpToggleButton.BackgroundColor3 = jumpScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 JumpToggleButton.Parent = MainFrame
 
 -- Setup JumpHeightLabel
 JumpHeightLabel.Size = UDim2.new(0, 100, 0, 50)
 JumpHeightLabel.Position = UDim2.new(0, 120, 0, 145)
-JumpHeightLabel.Text = "Extra Studs:"
+JumpHeightLabel.Text = "Height:"
 JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpHeightLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 JumpHeightLabel.Parent = MainFrame
@@ -326,7 +410,7 @@ JumpHeightBox.Parent = MainFrame
 TiltToggleButton.Size = UDim2.new(0, 100, 0, 50)
 TiltToggleButton.Position = UDim2.new(0, 10, 0, 205)
 TiltToggleButton.Text = "Tilt Changer"
-TiltToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+TiltToggleButton.BackgroundColor3 = tiltScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 TiltToggleButton.Parent = MainFrame
 
 -- Setup TiltValueLabel
@@ -346,46 +430,44 @@ TiltValueBox.Parent = MainFrame
 -- Setup AutolockToggleButton
 AutolockToggleButton.Size = UDim2.new(0, 100, 0, 50)
 AutolockToggleButton.Position = UDim2.new(0, 10, 0, 265)
-AutolockToggleButton.Text = "Auto S.lock"
-AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+AutolockToggleButton.Text = "Auto Shiftlock"
+AutolockToggleButton.BackgroundColor3 = autolockEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 AutolockToggleButton.Parent = MainFrame
 
 -- Setup BallTrajectoryButton
 BallTrajectoryButton.Size = UDim2.new(0, 100, 0, 50)
 BallTrajectoryButton.Position = UDim2.new(0, 10, 0, 325)
 BallTrajectoryButton.Text = "Ball Trajectory"
-BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+BallTrajectoryButton.BackgroundColor3 = ballTrajectoryEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 BallTrajectoryButton.Parent = MainFrame
 
 -- Setup OverlapToggleButton
 OverlapToggleButton.Size = UDim2.new(0, 100, 0, 50)
 OverlapToggleButton.Position = UDim2.new(0, 10, 0, 385)
 OverlapToggleButton.Text = "Auto Float"
-OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+OverlapToggleButton.BackgroundColor3 = overlapScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 OverlapToggleButton.Parent = MainFrame
 
 -- Toggle button actions
 ToggleButton.MouseButton1Click:Connect(function()
     scriptEnabled = not scriptEnabled
     if scriptEnabled then
-        print("Glide Ball Enabled")
         ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Glide Ball Disabled")
         ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end)
 
 -- Function to handle speed multiplier toggle
 local function toggleSpeedMultiplier()
     speedScriptEnabled = not speedScriptEnabled
     if speedScriptEnabled then
-        print("Walkspeed Enabled")
         SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Walkspeed Disabled")
         SpeedToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 -- Update speed multiplier value
@@ -393,8 +475,8 @@ local function updateSpeedMultiplier(textBox)
     local newMultiplier = tonumber(textBox.Text)
     if newMultiplier then
         speedMultiplier = newMultiplier
+        saveSettings()
     else
-            print("Invalid multiplier value")
     end
 end
 
@@ -409,12 +491,11 @@ end)
 local function toggleJumpHeight()
     jumpScriptEnabled = not jumpScriptEnabled
     if jumpScriptEnabled then
-        print("Jump Height Enabled")
         JumpToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Jump Height Disabled")
         JumpToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 -- Update jump height value
@@ -422,8 +503,8 @@ local function updateJumpHeight(textBox)
     local newHeight = tonumber(textBox.Text)
     if newHeight then
         jumpHeight = newHeight
+        saveSettings()
     else
-        print("Invalid jump height value")
     end
 end
 
@@ -440,12 +521,11 @@ end)
 local function toggleTilt()
     tiltScriptEnabled = not tiltScriptEnabled
     if tiltScriptEnabled then
-        print("Tilt Changer Enabled")
         TiltToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Tilt Changer Disabled")
         TiltToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 -- Update tilt value
@@ -453,8 +533,8 @@ local function updateTiltValue(textBox)
     local newTilt = tonumber(textBox.Text)
     if newTilt then
         tiltValue = newTilt
+        saveSettings()
     else
-        print("Invalid tilt value")
     end
 end
 
@@ -481,7 +561,6 @@ CourtButton1.MouseButton1Click:Connect(function()
     CourtButton1.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    print("Switched to InCourt1")
 end)
 
 CourtButton2.MouseButton1Click:Connect(function()
@@ -489,7 +568,6 @@ CourtButton2.MouseButton1Click:Connect(function()
     CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     CourtButton2.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-    print("Switched to InCourt2")
 end)
 
 CourtButton3.MouseButton1Click:Connect(function()
@@ -497,7 +575,6 @@ CourtButton3.MouseButton1Click:Connect(function()
     CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     CourtButton3.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    print("Switched to InCourt3")
 end)
 
 SpeedToggleButton.MouseButton1Click:Connect(toggleSpeedMultiplier)
@@ -533,12 +610,11 @@ end)
 local function toggleAutolock()
     autolockEnabled = not autolockEnabled
     if autolockEnabled then
-        print("Autolock Enabled")
         AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Autolock Disabled")
         AutolockToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 local function handleAutolockInput(input, gameProcessed)
@@ -548,13 +624,11 @@ local function handleAutolockInput(input, gameProcessed)
         if player:GetAttribute("isShiftLock") then -- if shiftlock was on
             wait(0.45)
             player:SetAttribute("isShiftLock", false)
-            print("shiftlock was on")
         else -- if shiftlock was off
             wait(0.35)
             player:SetAttribute("isShiftLock", true)
             wait(0.1)
             player:SetAttribute("isShiftLock", false)
-            print("shiftlock was off")
         end
     end
 end
@@ -562,55 +636,17 @@ end
 UserInputService.InputBegan:Connect(handleAutolockInput)
 AutolockToggleButton.MouseButton1Click:Connect(toggleAutolock)
 
--- Ball Trajectory Functionality
-local function PHYSICS_STUFF(velocity, position)
-    local acceleration = -workspace.Gravity
-    local timeToLand = (-velocity.y - math.sqrt(velocity.y * velocity.y - 4 * 0.5 * acceleration * position.y)) / (2 * 0.5 * acceleration)
-    local horizontalVelocity = Vector3.new(velocity.x, 0, velocity.z)
-    local landingPosition = position + horizontalVelocity * timeToLand + Vector3.new(0, -position.y, 0)
-    return landingPosition
-end
-
-local function Ball_Prediction(obj)
-    RunService:BindToRenderStep("VisualizeLandingPosition", Enum.RenderPriority.Camera.Value, function()
-        for _, ballModel in ipairs(workspace:GetDescendants()) do
-            if ballModel:IsA("Model") and ballModel.Name == "Ball" then
-                local ball = ballModel:FindFirstChild(tostring(obj))
-                if ball and not ball:FindFirstChild("Marker") then
-                    local Marker = Instance.new("Part")
-                    Marker.Name = "Marker"
-                    Marker.Size = Vector3.new(3, 3, 3)
-                    Marker.Shape = Enum.PartType.Ball
-                    Marker.BrickColor = BrickColor.new("Toothpaste")
-                    Marker.CanCollide = false
-                    Marker.Anchored = true
-                    Marker.Parent = ball
-                    Marker.Material = Enum.Material.Neon
-                    Marker.Transparency = 0
-                end
-                local initialVelocity = ballModel.Velocity
-                local landingPosition = PHYSICS_STUFF(initialVelocity.Value, ball.Position)
-                ball:FindFirstChild("Marker").CFrame = CFrame.new(landingPosition)
-                if ballModel:FindFirstChild("Marker") then
-                    ball:FindFirstChild("Marker"):Destroy()
-                end
-            end
-        end
-    end)
-end
-
 -- Toggle ball trajectory prediction
 local function toggleBallTrajectory()
     ballTrajectoryEnabled = not ballTrajectoryEnabled
     if ballTrajectoryEnabled then
-        print("Ball Trajectory Enabled")
         Ball_Prediction("Ball")
         BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Ball Trajectory Disabled")
         RunService:UnbindFromRenderStep("VisualizeLandingPosition")
         BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 BallTrajectoryButton.MouseButton1Click:Connect(toggleBallTrajectory)
@@ -619,12 +655,11 @@ BallTrajectoryButton.MouseButton1Click:Connect(toggleBallTrajectory)
 local function toggleOverlapScript()
     overlapScriptEnabled = not overlapScriptEnabled
     if overlapScriptEnabled then
-        print("Auto Float Enabled")
         OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        print("Auto Float Disabled")
         OverlapToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
+    saveSettings()
 end
 
 OverlapToggleButton.MouseButton1Click:Connect(toggleOverlapScript)
