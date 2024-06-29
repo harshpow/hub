@@ -580,16 +580,19 @@ end)
 SpeedToggleButton.MouseButton1Click:Connect(toggleSpeedMultiplier)
 SpeedMultiplierBox.FocusLost:Connect(function()
     updateSpeedMultiplier(SpeedMultiplierBox)
+    saveSettings()
 end)
 
 JumpToggleButton.MouseButton1Click:Connect(toggleJumpHeight)
 JumpHeightBox.FocusLost:Connect(function()
     updateJumpHeight(JumpHeightBox)
+    saveSettings()
 end)
 
 TiltToggleButton.MouseButton1Click:Connect(toggleTilt)
 TiltValueBox.FocusLost:Connect(function()
     updateTiltValue(TiltValueBox)
+    saveSettings()
 end)
 
 -- Detect Insert key press to toggle the GUI visibility
