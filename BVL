@@ -30,6 +30,7 @@ local tiltValue = 3500 -- Default tilt value
 local autolockEnabled = false
 local ballTrajectoryEnabled = false
 local overlapScriptEnabled = false
+local targetPositionOffset = 7 -- Default offset in studs
 
 -- Define settings file path
 local settingsFilePath = "harshs_world_BVL.txt"
@@ -83,7 +84,8 @@ local function saveSettings()
         tiltValue = tiltValue,
         autolockEnabled = autolockEnabled,
         ballTrajectoryEnabled = ballTrajectoryEnabled,
-        overlapScriptEnabled = overlapScriptEnabled
+        overlapScriptEnabled = overlapScriptEnabled,
+        targetPositionOffset = targetPositionOffset
     }
     local settingsString = game:GetService("HttpService"):JSONEncode(settings)
     writefile(settingsFilePath, settingsString)
@@ -104,6 +106,7 @@ local function loadSettings()
         autolockEnabled = settings.autolockEnabled
         ballTrajectoryEnabled = settings.ballTrajectoryEnabled
         overlapScriptEnabled = settings.overlapScriptEnabled
+        targetPositionOffset = settings.targetPositionOffset
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
@@ -212,8 +215,8 @@ local function applyForceTowardsBall()
             local ballDirection = (ballPosition - previousPosition).Unit
             previousPosition = ballPosition
 
-            -- Calculate target position 5 studs in front of the ball
-            local targetPosition = ballPosition + ballDirection * 7
+            -- Calculate target position based on offset in front of the ball
+            local targetPosition = ballPosition + ballDirection * targetPositionOffset
             
             -- Calculate direction to target position (ignore vertical component)
             local direction = (Vector3.new(targetPosition.X, playerPosition.Y, targetPosition.Z) - playerPosition).Unit
@@ -317,7 +320,7 @@ end)
 -- Continuously check for overlap
 RunService.RenderStepped:Connect(checkOverlap)
 
--- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, and overlap detection
+-- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, overlap detection, and target position offset
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 local MainFrame = Instance.new("Frame")
 local CreditsLabel = Instance.new("TextLabel")
@@ -337,9 +340,11 @@ local TiltValueBox = Instance.new("TextBox")
 local AutolockToggleButton = Instance.new("TextButton")
 local BallTrajectoryButton = Instance.new("TextButton")
 local OverlapToggleButton = Instance.new("TextButton")
+local TargetPositionOffsetLabel = Instance.new("TextLabel")
+local TargetPositionOffsetBox = Instance.new("TextBox")
 
 -- Setup MainFrame
-MainFrame.Size = UDim2.new(0, 450, 0, 460) -- Increased height for new button
+MainFrame.Size = UDim2.new(0, 360, 0, 450) -- Increased height for new button
 MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
 MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MainFrame.BackgroundTransparency = 0.2
@@ -356,116 +361,130 @@ CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
 
 -- Setup ToggleButton
-ToggleButton.Size = UDim2.new(0, 100, 0, 50)
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
 ToggleButton.Position = UDim2.new(0, 10, 0, 25)
 ToggleButton.Text = "Ball Glide"
 ToggleButton.BackgroundColor3 = scriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 ToggleButton.Parent = MainFrame
 
 -- Setup CourtButton1
-CourtButton1.Size = UDim2.new(0, 100, 0, 50)
-CourtButton1.Position = UDim2.new(0, 120, 0, 25)
+CourtButton1.Size = UDim2.new(0, 50, 0, 50)
+CourtButton1.Position = UDim2.new(0, 180, 0, 25)
 CourtButton1.Text = "Court 1"
 CourtButton1.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton1.Parent = MainFrame
 
 -- Setup CourtButton2
-CourtButton2.Size = UDim2.new(0, 100, 0, 50)
-CourtButton2.Position = UDim2.new(0, 230, 0, 25)
+CourtButton2.Size = UDim2.new(0, 50, 0, 50)
+CourtButton2.Position = UDim2.new(0, 240, 0, 25)
 CourtButton2.Text = "Court 2"
 CourtButton2.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton2.Parent = MainFrame
 
 -- Setup CourtButton3
-CourtButton3.Size = UDim2.new(0, 100, 0, 50)
-CourtButton3.Position = UDim2.new(0, 340, 0, 25)
+CourtButton3.Size = UDim2.new(0, 50, 0, 50)
+CourtButton3.Position = UDim2.new(0, 300, 0, 25)
 CourtButton3.Text = "Court 3"
 CourtButton3.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 CourtButton3.Parent = MainFrame
 
 -- Setup SpeedToggleButton
-SpeedToggleButton.Size = UDim2.new(0, 100, 0, 50)
+SpeedToggleButton.Size = UDim2.new(0, 50, 0, 50)
 SpeedToggleButton.Position = UDim2.new(0, 10, 0, 85)
 SpeedToggleButton.Text = "Walkspeed"
 SpeedToggleButton.BackgroundColor3 = speedScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 SpeedToggleButton.Parent = MainFrame
 
 -- Setup SpeedMultiplierLabel
-SpeedMultiplierLabel.Size = UDim2.new(0, 100, 0, 50)
-SpeedMultiplierLabel.Position = UDim2.new(0, 120, 0, 85)
+SpeedMultiplierLabel.Size = UDim2.new(0, 50, 0, 50)
+SpeedMultiplierLabel.Position = UDim2.new(0, 70, 0, 85)
 SpeedMultiplierLabel.Text = "Speed:"
 SpeedMultiplierLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 SpeedMultiplierLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 SpeedMultiplierLabel.Parent = MainFrame
 
 -- Setup SpeedMultiplierBox
-SpeedMultiplierBox.Size = UDim2.new(0, 100, 0, 50)
-SpeedMultiplierBox.Position = UDim2.new(0, 230, 0, 85)
+SpeedMultiplierBox.Size = UDim2.new(0, 50, 0, 50)
+SpeedMultiplierBox.Position = UDim2.new(0, 120, 0, 85)
 SpeedMultiplierBox.Text = tostring(speedMultiplier)
 SpeedMultiplierBox.Parent = MainFrame
 
 -- Setup JumpToggleButton
-JumpToggleButton.Size = UDim2.new(0, 100, 0, 50)
+JumpToggleButton.Size = UDim2.new(0, 50, 0, 50)
 JumpToggleButton.Position = UDim2.new(0, 10, 0, 145)
 JumpToggleButton.Text = "Jumpheight"
 JumpToggleButton.BackgroundColor3 = jumpScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 JumpToggleButton.Parent = MainFrame
 
 -- Setup JumpHeightLabel
-JumpHeightLabel.Size = UDim2.new(0, 100, 0, 50)
-JumpHeightLabel.Position = UDim2.new(0, 120, 0, 145)
+JumpHeightLabel.Size = UDim2.new(0, 50, 0, 50)
+JumpHeightLabel.Position = UDim2.new(0, 70, 0, 145)
 JumpHeightLabel.Text = "Height:"
 JumpHeightLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 JumpHeightLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 JumpHeightLabel.Parent = MainFrame
 
 -- Setup JumpHeightBox
-JumpHeightBox.Size = UDim2.new(0, 100, 0, 50)
-JumpHeightBox.Position = UDim2.new(0, 230, 0, 145)
+JumpHeightBox.Size = UDim2.new(0, 50, 0, 50)
+JumpHeightBox.Position = UDim2.new(0, 120, 0, 145)
 JumpHeightBox.Text = tostring(jumpHeight)
 JumpHeightBox.Parent = MainFrame
 
 -- Setup TiltToggleButton
-TiltToggleButton.Size = UDim2.new(0, 100, 0, 50)
+TiltToggleButton.Size = UDim2.new(0, 50, 0, 50)
 TiltToggleButton.Position = UDim2.new(0, 10, 0, 205)
 TiltToggleButton.Text = "Tilt Changer"
 TiltToggleButton.BackgroundColor3 = tiltScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 TiltToggleButton.Parent = MainFrame
 
 -- Setup TiltValueLabel
-TiltValueLabel.Size = UDim2.new(0, 100, 0, 50)
-TiltValueLabel.Position = UDim2.new(0, 120, 0, 205)
+TiltValueLabel.Size = UDim2.new(0, 50, 0, 50)
+TiltValueLabel.Position = UDim2.new(0, 70, 0, 205)
 TiltValueLabel.Text = "Tilt:"
 TiltValueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 TiltValueLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 TiltValueLabel.Parent = MainFrame
 
 -- Setup TiltValueBox
-TiltValueBox.Size = UDim2.new(0, 100, 0, 50)
-TiltValueBox.Position = UDim2.new(0, 230, 0, 205)
+TiltValueBox.Size = UDim2.new(0, 50, 0, 50)
+TiltValueBox.Position = UDim2.new(0, 120, 0, 205)
 TiltValueBox.Text = tostring(tiltValue)
 TiltValueBox.Parent = MainFrame
 
 -- Setup AutolockToggleButton
-AutolockToggleButton.Size = UDim2.new(0, 100, 0, 50)
+AutolockToggleButton.Size = UDim2.new(0, 50, 0, 50)
 AutolockToggleButton.Position = UDim2.new(0, 10, 0, 265)
 AutolockToggleButton.Text = "Auto Shiftlock"
 AutolockToggleButton.BackgroundColor3 = autolockEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 AutolockToggleButton.Parent = MainFrame
 
 -- Setup BallTrajectoryButton
-BallTrajectoryButton.Size = UDim2.new(0, 100, 0, 50)
+BallTrajectoryButton.Size = UDim2.new(0, 50, 0, 50)
 BallTrajectoryButton.Position = UDim2.new(0, 10, 0, 325)
 BallTrajectoryButton.Text = "Ball Trajectory"
 BallTrajectoryButton.BackgroundColor3 = ballTrajectoryEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 BallTrajectoryButton.Parent = MainFrame
 
 -- Setup OverlapToggleButton
-OverlapToggleButton.Size = UDim2.new(0, 100, 0, 50)
+OverlapToggleButton.Size = UDim2.new(0, 50, 0, 50)
 OverlapToggleButton.Position = UDim2.new(0, 10, 0, 385)
 OverlapToggleButton.Text = "Auto Float"
 OverlapToggleButton.BackgroundColor3 = overlapScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 OverlapToggleButton.Parent = MainFrame
+
+-- Setup TargetPositionOffsetLabel
+TargetPositionOffsetLabel.Size = UDim2.new(0, 50, 0, 50)
+TargetPositionOffsetLabel.Position = UDim2.new(0, 70, 0, 25)
+TargetPositionOffsetLabel.Text = "Offset:"
+TargetPositionOffsetLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TargetPositionOffsetLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+TargetPositionOffsetLabel.Parent = MainFrame
+
+-- Setup TargetPositionOffsetBox
+TargetPositionOffsetBox.Size = UDim2.new(0, 50, 0, 50)
+TargetPositionOffsetBox.Position = UDim2.new(0, 120, 0, 25)
+TargetPositionOffsetBox.Text = tostring(targetPositionOffset)
+TargetPositionOffsetBox.Parent = MainFrame
 
 -- Toggle button actions
 ToggleButton.MouseButton1Click:Connect(function()
@@ -611,6 +630,21 @@ end)
 TiltToggleButton.MouseButton1Click:Connect(toggleTilt)
 TiltValueBox.FocusLost:Connect(function()
     updateTiltValue(TiltValueBox)
+    saveSettings()
+end)
+
+-- Update target position offset value
+local function updateTargetPositionOffset(textBox)
+    local newOffset = tonumber(textBox.Text)
+    if newOffset then
+        targetPositionOffset = newOffset
+        saveSettings()
+    else
+    end
+end
+
+TargetPositionOffsetBox.FocusLost:Connect(function()
+    updateTargetPositionOffset(TargetPositionOffsetBox)
     saveSettings()
 end)
 
