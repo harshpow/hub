@@ -126,6 +126,7 @@ local function createVisualizationPart()
     part.BrickColor = BrickColor.new("Bright red")
     part.Material = Enum.Material.Neon
     part.Transparency = 0.7
+    part.Position = Vector3.new(0, -100, 0)
     part.Parent = Workspace
     return part
 end
@@ -188,25 +189,43 @@ local function applyForceTowardsBall()
             bodyVelocity.Parent = humanoidRootPart
         end
 
+        -- Track ball's previous position
+        local previousPosition = ballPart.Position
+
         -- Update visualization part position
         visualizationPart.Position = ballPart.Position
 
         -- Function to update force direction
         local function updateForce()
+            if not ballPart.Parent then
+                -- Ball despawned, stop gliding
+                bodyVelocity:Destroy()
+                RunService:UnbindFromRenderStep("UpdateForce")
+                visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
+                return
+            end
+
             local ballPosition = ballPart.Position
             local playerPosition = humanoidRootPart.Position
             
-            -- Calculate direction (ignore vertical component)
-            local direction = (Vector3.new(ballPosition.X, playerPosition.Y, ballPosition.Z) - playerPosition).Unit
+            -- Calculate ball's movement direction
+            local ballDirection = (ballPosition - previousPosition).Unit
+            previousPosition = ballPosition
+
+            -- Calculate target position 5 studs in front of the ball
+            local targetPosition = ballPosition + ballDirection * 7
+            
+            -- Calculate direction to target position (ignore vertical component)
+            local direction = (Vector3.new(targetPosition.X, playerPosition.Y, targetPosition.Z) - playerPosition).Unit
             
             -- Apply force (affect X and Z velocity)
-            bodyVelocity.Velocity = Vector3.new(direction.X * 15, 0, direction.Z * 25) -- Adjust force value as needed
+            bodyVelocity.Velocity = Vector3.new(direction.X * 25, 0, direction.Z * 25) -- Adjust force value as needed
             
             -- Update visualization part position
-            visualizationPart.Position = ballPosition
+            visualizationPart.Position = targetPosition
             
             -- Check distance and remove BodyVelocity if within 2 studs
-            if (humanoidRootPart.Position - ballPart.Position).Magnitude < 2 then
+            if (humanoidRootPart.Position - targetPosition).Magnitude < 1 then
                 bodyVelocity:Destroy()
                 RunService:UnbindFromRenderStep("UpdateForce")
                 visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
@@ -331,7 +350,7 @@ MainFrame.Parent = ScreenGui
 -- Setup CreditsLabel
 CreditsLabel.Size = UDim2.new(0, 100, 0, 50)
 CreditsLabel.Position = UDim2.new(0, 110, 0, -15)
-CreditsLabel.Text = "harsh's world | v.2.0.0 | INSERT toggle UI | .gg/vF24gXQw2Z"
+CreditsLabel.Text = "harsh's world | v.1.3 | INSERT toggle UI | .gg/vF24gXQw2Z"
 CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
@@ -605,6 +624,7 @@ end)
 -- Detect space bar press for applying force towards the ball
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Space and not gameProcessed and scriptEnabled then
+        wait(0.39)
         applyForceTowardsBall()
     end
 end)
