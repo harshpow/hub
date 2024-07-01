@@ -249,7 +249,8 @@ local function applyForceTowardsBall()
 
         -- Unbind on mouse button 1 press or other specified keys
         local function handleInput(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or
+               input.UserInputType == Enum.UserInputType.MouseButton2 or  
                input.KeyCode == Enum.KeyCode.F or 
                input.KeyCode == Enum.KeyCode.R or 
                input.KeyCode == Enum.KeyCode.Two then
@@ -323,6 +324,7 @@ RunService.RenderStepped:Connect(checkOverlap)
 -- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, overlap detection, and target position offset
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 local MainFrame = Instance.new("Frame")
+local CloseButton = Instance.new("TextButton")
 local CreditsLabel = Instance.new("TextLabel")
 local ToggleButton = Instance.new("TextButton")
 local CourtButton1 = Instance.new("TextButton")
@@ -352,13 +354,25 @@ MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.Parent = ScreenGui
 
+-- Setup CloseButton
+CloseButton.Size = UDim2.new(0, 15, 0, 15)
+CloseButton.Position = UDim2.new(0, 345, 0, 0)
+CloseButton.Text = "X"
+CloseButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+CloseButton.Parent = MainFrame
+CloseButton.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+
 -- Setup CreditsLabel
-CreditsLabel.Size = UDim2.new(0, 100, 0, 50)
-CreditsLabel.Position = UDim2.new(0, 110, 0, -15)
+CreditsLabel.Size = UDim2.new(0, 100, 0, 18)
+CreditsLabel.Position = UDim2.new(0, 10, 0, 0)
 CreditsLabel.Text = "harsh's world | v.1.3 | INSERT toggle UI | .gg/vF24gXQw2Z"
 CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
+CreditsLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Setup ToggleButton
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
@@ -658,7 +672,7 @@ end)
 -- Detect space bar press for applying force towards the ball
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Space and not gameProcessed and scriptEnabled then
-        wait(0.38)
+        wait(0.37)
         applyForceTowardsBall()
     end
 end)
