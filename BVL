@@ -672,7 +672,7 @@ end)
 -- Detect space bar press for applying force towards the ball
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if input.KeyCode == Enum.KeyCode.Space and not gameProcessed and scriptEnabled then
-        wait(0.37)
+        wait(0.3)
         applyForceTowardsBall()
     end
 end)
