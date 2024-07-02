@@ -1,7 +1,7 @@
-loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/LOG'))()
-
 if game.PlaceId == 6734275465 then -- bvl
     loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/BVL'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/LOG'))()
 elseif game.PlaceId == 14904820737 then -- dbr
     loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/DBR'))()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/harshpow/hub/main/LOG'))()
 end
