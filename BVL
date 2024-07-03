@@ -564,7 +564,7 @@ end
 UserInputService.InputBegan:Connect(function(input, isProcessed)
     if isProcessed then return end -- Ignore if the event is already processed
     if input.KeyCode == Enum.KeyCode.Space and jumpScriptEnabled then
-        wait(0.35)
+        wait(0.5)
         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, jumpHeight, 0)
     end
 end)
@@ -696,7 +696,7 @@ local function handleAutolockInput(input, gameProcessed)
             wait(0.45)
             player:SetAttribute("isShiftLock", false)
         else -- if shiftlock was off
-            wait(0.3)
+            wait(0.35)
             player:SetAttribute("isShiftLock", true)
             wait(0.1)
             player:SetAttribute("isShiftLock", false)
