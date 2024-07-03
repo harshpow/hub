@@ -564,7 +564,6 @@ end
 UserInputService.InputBegan:Connect(function(input, isProcessed)
     if isProcessed then return end -- Ignore if the event is already processed
     if input.KeyCode == Enum.KeyCode.Space and jumpScriptEnabled then
-        wait(0.5)
         humanoidRootPart.Velocity = humanoidRootPart.Velocity + Vector3.new(0, jumpHeight, 0)
     end
 end)
