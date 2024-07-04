@@ -31,6 +31,7 @@ local autolockEnabled = false
 local ballTrajectoryEnabled = false
 local overlapScriptEnabled = false
 local targetPositionOffset = 7 -- Default offset in studs
+local baseColorToggleEnabled = false -- Toggle for base color and material
 
 -- Define settings file path
 local settingsFilePath = "harshs_world_BVL.txt"
@@ -54,7 +55,7 @@ local function Ball_Prediction(obj)
                     Marker.Name = "Marker"
                     Marker.Size = Vector3.new(3, 3, 3)
                     Marker.Shape = Enum.PartType.Ball
-                    Marker.BrickColor = BrickColor.new("Toothpaste")
+                    Marker.BrickColor = BrickColor.new("Institutional white")
                     Marker.CanCollide = false
                     Marker.Anchored = true
                     Marker.Parent = ball
@@ -85,7 +86,8 @@ local function saveSettings()
         autolockEnabled = autolockEnabled,
         ballTrajectoryEnabled = ballTrajectoryEnabled,
         overlapScriptEnabled = overlapScriptEnabled,
-        targetPositionOffset = targetPositionOffset
+        targetPositionOffset = targetPositionOffset,
+        baseColorToggleEnabled = baseColorToggleEnabled -- Save base color toggle state
     }
     local settingsString = game:GetService("HttpService"):JSONEncode(settings)
     writefile(settingsFilePath, settingsString)
@@ -107,10 +109,17 @@ local function loadSettings()
         ballTrajectoryEnabled = settings.ballTrajectoryEnabled
         overlapScriptEnabled = settings.overlapScriptEnabled
         targetPositionOffset = settings.targetPositionOffset
+        baseColorToggleEnabled = settings.baseColorToggleEnabled -- Load base color toggle state
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
             Ball_Prediction("Ball")
+        end
+
+        -- Apply base color and material if enabled
+        if baseColorToggleEnabled then
+            Workspace.Base.BrickColor = BrickColor.new("Pastel brown")
+            Workspace.Base.Material = Enum.Material.WoodPlanks
         end
     end
 end
@@ -126,7 +135,7 @@ local function createVisualizationPart()
     part.CanCollide = false
     part.Size = Vector3.new(3, 3, 3) -- Increased size for better visibility
     part.Shape = Enum.PartType.Ball
-    part.BrickColor = BrickColor.new("Bright red")
+    part.BrickColor = BrickColor.new("Institutional white")
     part.Material = Enum.Material.Neon
     part.Transparency = 0.7
     part.Position = Vector3.new(0, -100, 0)
@@ -321,7 +330,7 @@ end)
 -- Continuously check for overlap
 RunService.RenderStepped:Connect(checkOverlap)
 
--- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, overlap detection, and target position offset
+-- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, overlap detection, target position offset, and base color/material
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 local MainFrame = Instance.new("Frame")
 local CloseButton = Instance.new("TextButton")
@@ -344,9 +353,10 @@ local BallTrajectoryButton = Instance.new("TextButton")
 local OverlapToggleButton = Instance.new("TextButton")
 local TargetPositionOffsetLabel = Instance.new("TextLabel")
 local TargetPositionOffsetBox = Instance.new("TextBox")
+local BaseColorToggleButton = Instance.new("TextButton") -- New button for base color toggle
 
 -- Setup MainFrame
-MainFrame.Size = UDim2.new(0, 360, 0, 450) -- Increased height for new button
+MainFrame.Size = UDim2.new(0, 360, 0, 510) -- Increased height for new button
 MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
 MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MainFrame.BackgroundTransparency = 0.2
@@ -363,7 +373,6 @@ CloseButton.Parent = MainFrame
 CloseButton.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
 end)
-
 
 -- Setup CreditsLabel
 CreditsLabel.Size = UDim2.new(0, 100, 0, 18)
@@ -499,6 +508,13 @@ TargetPositionOffsetBox.Size = UDim2.new(0, 50, 0, 50)
 TargetPositionOffsetBox.Position = UDim2.new(0, 120, 0, 25)
 TargetPositionOffsetBox.Text = tostring(targetPositionOffset)
 TargetPositionOffsetBox.Parent = MainFrame
+
+-- Setup BaseColorToggleButton
+BaseColorToggleButton.Size = UDim2.new(0, 50, 0, 50)
+BaseColorToggleButton.Position = UDim2.new(0, 10, 0, 445)
+BaseColorToggleButton.Text = "Base Color"
+BaseColorToggleButton.BackgroundColor3 = baseColorToggleEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+BaseColorToggleButton.Parent = MainFrame
 
 -- Toggle button actions
 ToggleButton.MouseButton1Click:Connect(function()
@@ -734,3 +750,20 @@ local function toggleOverlapScript()
 end
 
 OverlapToggleButton.MouseButton1Click:Connect(toggleOverlapScript)
+
+-- Toggle base color and material
+local function toggleBaseColor()
+    baseColorToggleEnabled = not baseColorToggleEnabled
+    if baseColorToggleEnabled then
+        Workspace.Base.BrickColor = BrickColor.new("Pastel brown")
+        Workspace.Base.Material = Enum.Material.WoodPlanks
+        BaseColorToggleButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        Workspace.Base.BrickColor = BrickColor.new("Pastel brown")
+        Workspace.Base.Material = Enum.Material.Sand
+        BaseColorToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+    saveSettings()
+end
+
+BaseColorToggleButton.MouseButton1Click:Connect(toggleBaseColor)
