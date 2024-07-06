@@ -356,7 +356,7 @@ local TargetPositionOffsetBox = Instance.new("TextBox")
 local BaseColorToggleButton = Instance.new("TextButton") -- New button for base color toggle
 
 -- Setup MainFrame
-MainFrame.Size = UDim2.new(0, 360, 0, 510) -- Increased height for new button
+MainFrame.Size = UDim2.new(0, 360, 0, 270) -- Increased height for new button
 MainFrame.Position = UDim2.new(0.5, -225, 0, 10)
 MainFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 MainFrame.BackgroundTransparency = 0.2
@@ -377,7 +377,7 @@ end)
 -- Setup CreditsLabel
 CreditsLabel.Size = UDim2.new(0, 100, 0, 18)
 CreditsLabel.Position = UDim2.new(0, 10, 0, 0)
-CreditsLabel.Text = "harsh's world | v.1.3 | INSERT toggle UI | .gg/vF24gXQw2Z"
+CreditsLabel.Text = "harsh's world | INSERT toggle UI | .gg/vF24gXQw2Z"
 CreditsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 CreditsLabel.BackgroundTransparency = 1
 CreditsLabel.Parent = MainFrame
@@ -476,21 +476,21 @@ TiltValueBox.Parent = MainFrame
 
 -- Setup AutolockToggleButton
 AutolockToggleButton.Size = UDim2.new(0, 50, 0, 50)
-AutolockToggleButton.Position = UDim2.new(0, 10, 0, 265)
+AutolockToggleButton.Position = UDim2.new(0, 300, 0, 85)
 AutolockToggleButton.Text = "Auto Shiftlock"
 AutolockToggleButton.BackgroundColor3 = autolockEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 AutolockToggleButton.Parent = MainFrame
 
 -- Setup BallTrajectoryButton
 BallTrajectoryButton.Size = UDim2.new(0, 50, 0, 50)
-BallTrajectoryButton.Position = UDim2.new(0, 10, 0, 325)
+BallTrajectoryButton.Position = UDim2.new(0, 180, 0, 85)
 BallTrajectoryButton.Text = "Ball Trajectory"
 BallTrajectoryButton.BackgroundColor3 = ballTrajectoryEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 BallTrajectoryButton.Parent = MainFrame
 
 -- Setup OverlapToggleButton
 OverlapToggleButton.Size = UDim2.new(0, 50, 0, 50)
-OverlapToggleButton.Position = UDim2.new(0, 10, 0, 385)
+OverlapToggleButton.Position = UDim2.new(0, 240, 0, 85)
 OverlapToggleButton.Text = "Auto Float"
 OverlapToggleButton.BackgroundColor3 = overlapScriptEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 OverlapToggleButton.Parent = MainFrame
@@ -511,7 +511,7 @@ TargetPositionOffsetBox.Parent = MainFrame
 
 -- Setup BaseColorToggleButton
 BaseColorToggleButton.Size = UDim2.new(0, 50, 0, 50)
-BaseColorToggleButton.Position = UDim2.new(0, 10, 0, 445)
+BaseColorToggleButton.Position = UDim2.new(0, 180, 0, 145)
 BaseColorToggleButton.Text = "Base Color"
 BaseColorToggleButton.BackgroundColor3 = baseColorToggleEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 BaseColorToggleButton.Parent = MainFrame
