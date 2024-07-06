@@ -32,6 +32,7 @@ local ballTrajectoryEnabled = false
 local overlapScriptEnabled = false
 local targetPositionOffset = 7 -- Default offset in studs
 local baseColorToggleEnabled = false -- Toggle for base color and material
+local displayPowerEnabled = false -- Toggle for display power functionality
 
 -- Define settings file path
 local settingsFilePath = "harshs_world_BVL.txt"
@@ -87,7 +88,8 @@ local function saveSettings()
         ballTrajectoryEnabled = ballTrajectoryEnabled,
         overlapScriptEnabled = overlapScriptEnabled,
         targetPositionOffset = targetPositionOffset,
-        baseColorToggleEnabled = baseColorToggleEnabled -- Save base color toggle state
+        baseColorToggleEnabled = baseColorToggleEnabled, -- Save base color toggle state
+        displayPowerEnabled = displayPowerEnabled -- Save display power toggle state
     }
     local settingsString = game:GetService("HttpService"):JSONEncode(settings)
     writefile(settingsFilePath, settingsString)
@@ -110,6 +112,7 @@ local function loadSettings()
         overlapScriptEnabled = settings.overlapScriptEnabled
         targetPositionOffset = settings.targetPositionOffset
         baseColorToggleEnabled = settings.baseColorToggleEnabled -- Load base color toggle state
+        displayPowerEnabled = settings.displayPowerEnabled -- Load display power toggle state
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
@@ -120,6 +123,11 @@ local function loadSettings()
         if baseColorToggleEnabled then
             Workspace.Base.BrickColor = BrickColor.new("Pastel brown")
             Workspace.Base.Material = Enum.Material.WoodPlanks
+        end
+
+        -- Initialize display power if enabled
+        if displayPowerEnabled then
+            initDisplayPower()
         end
     end
 end
@@ -330,6 +338,77 @@ end)
 -- Continuously check for overlap
 RunService.RenderStepped:Connect(checkOverlap)
 
+-- Function to create a BillboardGui with a TextLabel
+local function createPowerLabel(character)
+    local billboardGui = Instance.new("BillboardGui")
+    billboardGui.Size = UDim2.new(0, 50, 0, 25)
+    billboardGui.StudsOffset = Vector3.new(0, -2, 0)
+    billboardGui.AlwaysOnTop = true
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.BackgroundTransparency = 1
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextScaled = true
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Parent = billboardGui
+
+    local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+    if torso then
+        billboardGui.Parent = torso
+    end
+
+    return textLabel
+end
+
+-- Function to update the TextLabel with the current power value and set color
+local function updatePowerLabel(textLabel, powerValue)
+    textLabel.Text = tostring(powerValue)
+    
+    if powerValue >= 1 and powerValue <= 5 then
+        textLabel.TextColor3 = Color3.new(0, 1, 0) -- Green
+    elseif powerValue >= 6 and powerValue <= 11 then
+        textLabel.TextColor3 = Color3.new(0.254902, 0.701961, 1.000000) -- Blue
+    elseif powerValue >= 12 then
+        textLabel.TextColor3 = Color3.new(1, 0, 0) -- Red
+    else
+        textLabel.TextColor3 = Color3.new(1, 1, 1) -- White (default)
+    end
+end
+
+-- Function to setup the listener for a player's power value
+local function setupPowerDisplay(character)
+    local powerValueObj = character:FindFirstChild("Power")
+    if powerValueObj and powerValueObj:IsA("NumberValue") then
+        local powerLabel = createPowerLabel(character)
+        updatePowerLabel(powerLabel, powerValueObj.Value)
+
+        powerValueObj.Changed:Connect(function()
+            updatePowerLabel(powerLabel, powerValueObj.Value)
+        end)
+    end
+end
+
+-- Setup the display for all players currently in the game
+local function initDisplayPower()
+    for _, player in pairs(game.Players:GetPlayers()) do
+        player.CharacterAdded:Connect(function(character)
+            setupPowerDisplay(character)
+        end)
+        
+        if player.Character then
+            setupPowerDisplay(player.Character)
+        end
+    end
+
+    -- Setup the display for players joining the game
+    game.Players.PlayerAdded:Connect(function(player)
+        player.CharacterAdded:Connect(function(character)
+            setupPowerDisplay(character)
+        end)
+    end)
+end
+
 -- Create GUI for toggling the court areas, script, speed multiplier, jump height, tilt changer, autolock, ball trajectory, overlap detection, target position offset, and base color/material
 local ScreenGui = Instance.new("ScreenGui", player.PlayerGui)
 local MainFrame = Instance.new("Frame")
@@ -354,6 +433,7 @@ local OverlapToggleButton = Instance.new("TextButton")
 local TargetPositionOffsetLabel = Instance.new("TextLabel")
 local TargetPositionOffsetBox = Instance.new("TextBox")
 local BaseColorToggleButton = Instance.new("TextButton") -- New button for base color toggle
+local DisplayPowerButton = Instance.new("TextButton") -- New button for display power toggle
 
 -- Setup MainFrame
 MainFrame.Size = UDim2.new(0, 360, 0, 270) -- Increased height for new button
@@ -515,6 +595,13 @@ BaseColorToggleButton.Position = UDim2.new(0, 180, 0, 145)
 BaseColorToggleButton.Text = "Base Color"
 BaseColorToggleButton.BackgroundColor3 = baseColorToggleEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
 BaseColorToggleButton.Parent = MainFrame
+
+-- Setup DisplayPowerButton
+DisplayPowerButton.Size = UDim2.new(0, 50, 0, 50)
+DisplayPowerButton.Position = UDim2.new(0, 240, 0, 145)
+DisplayPowerButton.Text = "Display Power"
+DisplayPowerButton.BackgroundColor3 = displayPowerEnabled and Color3.fromRGB(0, 255, 0) or Color3.fromRGB(255, 0, 0)
+DisplayPowerButton.Parent = MainFrame
 
 -- Toggle button actions
 ToggleButton.MouseButton1Click:Connect(function()
@@ -767,3 +854,27 @@ local function toggleBaseColor()
 end
 
 BaseColorToggleButton.MouseButton1Click:Connect(toggleBaseColor)
+
+-- Toggle display power
+local function toggleDisplayPower()
+    displayPowerEnabled = not displayPowerEnabled
+    if displayPowerEnabled then
+        initDisplayPower()
+        DisplayPowerButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+    else
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character then
+                local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
+                if torso then
+                    local billboardGui = torso:FindFirstChild("BillboardGui")
+                    if billboardGui then
+                        billboardGui:Destroy()
+                    end
+                end
+            end
+        end
+        DisplayPowerButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    end
+end
+
+DisplayPowerButton.MouseButton1Click:Connect(toggleDisplayPower)
