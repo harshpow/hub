@@ -89,7 +89,6 @@ local function saveSettings()
         overlapScriptEnabled = overlapScriptEnabled,
         targetPositionOffset = targetPositionOffset,
         baseColorToggleEnabled = baseColorToggleEnabled, -- Save base color toggle state
-        displayPowerEnabled = displayPowerEnabled -- Save display power toggle state
     }
     local settingsString = game:GetService("HttpService"):JSONEncode(settings)
     writefile(settingsFilePath, settingsString)
@@ -112,7 +111,6 @@ local function loadSettings()
         overlapScriptEnabled = settings.overlapScriptEnabled
         targetPositionOffset = settings.targetPositionOffset
         baseColorToggleEnabled = settings.baseColorToggleEnabled -- Load base color toggle state
-        displayPowerEnabled = settings.displayPowerEnabled -- Load display power toggle state
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
