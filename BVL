@@ -22,15 +22,15 @@ local currentCourtIndex = 1
 -- Toggle variables
 local scriptEnabled = false
 local speedScriptEnabled = false
-local speedMultiplier = 0.015
+local speedMultiplier = 0.025
 local jumpScriptEnabled = false
-local jumpHeight = 2.5 -- Default jump height in studs
+local jumpHeight = 3.3 -- Default jump height in studs
 local tiltScriptEnabled = false
 local tiltValue = 3500 -- Default tilt value
 local autolockEnabled = false
 local ballTrajectoryEnabled = false
 local overlapScriptEnabled = false
-local targetPositionOffset = 7 -- Default offset in studs
+local targetPositionOffset = 3.5 -- Default offset in studs
 local baseColorToggleEnabled = false -- Toggle for base color and material
 local displayPowerEnabled = false -- Toggle for display power functionality
 
