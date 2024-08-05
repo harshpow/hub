@@ -100,29 +100,17 @@ local function loadSettings()
         local settingsString = readfile(settingsFilePath)
         local settings = game:GetService("HttpService"):JSONDecode(settingsString)
         scriptEnabled = settings.scriptEnabled
-        print("[+] Ball Glide Loaded:", scriptEnabled)
         targetPositionOffset = settings.targetPositionOffset
-        print("[+] Offset:", targetPositionOffset)
         speedScriptEnabled = settings.speedScriptEnabled
-        print("[+] Walkspeed Loaded:", speedScriptEnabled)
         speedMultiplier = settings.speedMultiplier
-        print("[+] Speed:", speedMultiplier)
         jumpScriptEnabled = settings.jumpScriptEnabled
-        print("[+] Jumpheight Loaded:", jumpScriptEnabled)
         jumpHeight = settings.jumpHeight
-        print("[+] Height:", Jumpheight)
         tiltScriptEnabled = settings.tiltScriptEnabled
-        print("[+] Tilt Changer Loaded:", tiltScriptEnabled)
         tiltValue = settings.tiltValue
-        print("[+] Tilt:", tiltValue)
         autolockEnabled = settings.autolockEnabled
-        print("[+] Auto Shiftlock Loaded:", autolockEnabled)
         ballTrajectoryEnabled = settings.ballTrajectoryEnabled
-        print("[+] Ball Trajectory Loaded:", ballTrajectoryEnabled)
         overlapScriptEnabled = settings.overlapScriptEnabled
-        print("[+] Auto Float Loaded:", overlapScriptEnabled)
-        baseColorToggleEnabled = settings.baseColorToggleEnabled -- Load base color toggle state
-        print("[+] Base Color Loaded:", baseColorToggleEnabled)
+        baseColorToggleEnabled = settings.baseColorToggleEnabled
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
@@ -144,7 +132,28 @@ end
 
 -- Load settings on script start
 loadSettings()
-print("[+] loaded config")
+
+-- Helper function to convert boolean to emoji
+local function boolToEmoji(bool)
+    return bool and "🟢" or "🔴"
+end
+
+-- Print statements after settings are loaded
+print("📀 loaded config")
+print(boolToEmoji(scriptEnabled) .. " Ball Glide")
+print("🔧 Offset:", targetPositionOffset)
+print(boolToEmoji(speedScriptEnabled) .. " Walkspeed")
+print("🔧 Speed:", speedMultiplier)
+print(boolToEmoji(jumpScriptEnabled) .. " Jumpheight")
+print("🔧 Height:", jumpHeight)
+print(boolToEmoji(tiltScriptEnabled) .. " Tilt Changer")
+print("🔧 Tilt:", tiltValue)
+print(boolToEmoji(autolockEnabled) .. " Auto Shiftlock")
+print(boolToEmoji(ballTrajectoryEnabled) .. " Ball Trajectory")
+print(boolToEmoji(overlapScriptEnabled) .. " Auto Float")
+print(boolToEmoji(baseColorToggleEnabled) .. " Base Color")
+
+
 
 -- Function to create a visualization part
 local function createVisualizationPart()
