@@ -100,17 +100,29 @@ local function loadSettings()
         local settingsString = readfile(settingsFilePath)
         local settings = game:GetService("HttpService"):JSONDecode(settingsString)
         scriptEnabled = settings.scriptEnabled
-        speedScriptEnabled = settings.speedScriptEnabled
-        speedMultiplier = settings.speedMultiplier
-        jumpScriptEnabled = settings.jumpScriptEnabled
-        jumpHeight = settings.jumpHeight
-        tiltScriptEnabled = settings.tiltScriptEnabled
-        tiltValue = settings.tiltValue
-        autolockEnabled = settings.autolockEnabled
-        ballTrajectoryEnabled = settings.ballTrajectoryEnabled
-        overlapScriptEnabled = settings.overlapScriptEnabled
+        print("[+] Ball Glide Loaded:", scriptEnabled)
         targetPositionOffset = settings.targetPositionOffset
+        print("[+] Offset:", targetPositionOffset)
+        speedScriptEnabled = settings.speedScriptEnabled
+        print("[+] Walkspeed Loaded:", speedScriptEnabled)
+        speedMultiplier = settings.speedMultiplier
+        print("[+] Speed:", speedMultiplier)
+        jumpScriptEnabled = settings.jumpScriptEnabled
+        print("[+] Jumpheight Loaded:", jumpScriptEnabled)
+        jumpHeight = settings.jumpHeight
+        print("[+] Height:", Jumpheight)
+        tiltScriptEnabled = settings.tiltScriptEnabled
+        print("[+] Tilt Changer Loaded:", tiltScriptEnabled)
+        tiltValue = settings.tiltValue
+        print("[+] Tilt:", tiltValue)
+        autolockEnabled = settings.autolockEnabled
+        print("[+] Auto Shiftlock Loaded:", autolockEnabled)
+        ballTrajectoryEnabled = settings.ballTrajectoryEnabled
+        print("[+] Ball Trajectory Loaded:", ballTrajectoryEnabled)
+        overlapScriptEnabled = settings.overlapScriptEnabled
+        print("[+] Auto Float Loaded:", overlapScriptEnabled)
         baseColorToggleEnabled = settings.baseColorToggleEnabled -- Load base color toggle state
+        print("[+] Base Color Loaded:", baseColorToggleEnabled)
 
         -- Initialize ball trajectory if enabled
         if ballTrajectoryEnabled then
