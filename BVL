@@ -160,11 +160,11 @@ local function createVisualizationPart()
     local part = Instance.new("Part")
     part.Anchored = true
     part.CanCollide = false
-    part.Size = Vector3.new(3, 3, 3) -- Increased size for better visibility
+    part.Size = Vector3.new(1, 1, 1)
     part.Shape = Enum.PartType.Ball
-    part.BrickColor = BrickColor.new("Institutional white")
+    part.BrickColor = BrickColor.new("Bright red")
     part.Material = Enum.Material.Neon
-    part.Transparency = 0.7
+    part.Transparency = 0.4
     part.Position = Vector3.new(0, -100, 0)
     part.Parent = Workspace
     return part
@@ -267,6 +267,7 @@ local function applyForceTowardsBall()
             if (humanoidRootPart.Position - targetPosition).Magnitude < 1 then
                 bodyVelocity:Destroy()
                 RunService:UnbindFromRenderStep("UpdateForce")
+				wait(1)
                 visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
             end
         end
@@ -279,6 +280,7 @@ local function applyForceTowardsBall()
             if bodyVelocity.Parent then
                 bodyVelocity:Destroy()
                 RunService:UnbindFromRenderStep("UpdateForce")
+				wait(1)
                 visualizationPart.Position = Vector3.new(0, -100, 0) -- Move visualization part out of sight
             end
         end
@@ -361,15 +363,16 @@ RunService.RenderStepped:Connect(checkOverlap)
 local function createPowerLabel(character)
     local billboardGui = Instance.new("BillboardGui")
     billboardGui.Size = UDim2.new(0, 50, 0, 25)
-    billboardGui.StudsOffset = Vector3.new(0, -2, 0)
+    billboardGui.StudsOffset = Vector3.new(0, -0.5, 0)
     billboardGui.AlwaysOnTop = true
 
     local textLabel = Instance.new("TextLabel")
     textLabel.Size = UDim2.new(1, 0, 1, 0)
     textLabel.BackgroundTransparency = 1
+	textLabel.TextStrokeTransparency = 0
     textLabel.TextColor3 = Color3.new(1, 1, 1)
     textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.Font = Enum.Font.FredokaOne
     textLabel.Parent = billboardGui
 
     local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
@@ -381,17 +384,21 @@ local function createPowerLabel(character)
 end
 
 -- Function to update the TextLabel with the current power value and set color
-local function updatePowerLabel(textLabel, powerValue)
+local function updatePowerLabel(textLabel, highlight, powerValue)
     textLabel.Text = tostring(powerValue)
     
     if powerValue >= 1 and powerValue <= 5 then
         textLabel.TextColor3 = Color3.new(0, 1, 0) -- Green
+        highlight.OutlineColor = Color3.new(0, 1, 0) -- Green
     elseif powerValue >= 6 and powerValue <= 11 then
         textLabel.TextColor3 = Color3.new(0.254902, 0.701961, 1.000000) -- Blue
+        highlight.OutlineColor = Color3.new(0.254902, 0.701961, 1.000000) -- Blue
     elseif powerValue >= 12 then
         textLabel.TextColor3 = Color3.new(1, 0, 0) -- Red
+        highlight.OutlineColor = Color3.new(1, 0, 0) -- Red
     else
         textLabel.TextColor3 = Color3.new(1, 1, 1) -- White (default)
+        highlight.OutlineColor = Color3.new(1, 1, 1) -- White (default)
     end
 end
 
@@ -400,10 +407,18 @@ local function setupPowerDisplay(character)
     local powerValueObj = character:FindFirstChild("Power")
     if powerValueObj and powerValueObj:IsA("NumberValue") then
         local powerLabel = createPowerLabel(character)
-        updatePowerLabel(powerLabel, powerValueObj.Value)
+        local highlight = character:FindFirstChild("CharacterHighlight") or Instance.new("Highlight", character)
+        highlight.Name = "CharacterHighlight"
+        highlight.Adornee = character
+        highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+        highlight.FillColor = Color3.fromRGB(255, 255, 255)
+        highlight.FillTransparency = 1
+        highlight.OutlineTransparency = 0.75
+        
+        updatePowerLabel(powerLabel, highlight, powerValueObj.Value)
 
         powerValueObj.Changed:Connect(function()
-            updatePowerLabel(powerLabel, powerValueObj.Value)
+            updatePowerLabel(powerLabel, highlight, powerValueObj.Value)
         end)
     end
 end
@@ -874,16 +889,63 @@ end
 
 BaseColorToggleButton.MouseButton1Click:Connect(toggleBaseColor)
 
--- Toggle display power
+-- Function to toggle display power
 local function toggleDisplayPower()
     displayPowerEnabled = not displayPowerEnabled
+    
     if displayPowerEnabled then
         initDisplayPower()
         DisplayPowerButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-    else
+        
+        -- Add highlight to characters
         for _, player in pairs(game.Players:GetPlayers()) do
             if player.Character then
-                local torso = player.Character:FindFirstChild("Torso") or player.Character:FindFirstChild("UpperTorso")
+                local character = player.Character
+                
+                -- Ensure we do not create duplicate highlights
+                if not character:FindFirstChild("CharacterHighlight") then
+                    local highlight = Instance.new("Highlight", character)
+                    highlight.Name = "CharacterHighlight"
+                    highlight.Adornee = character
+                    highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+                    highlight.FillColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 1
+                    highlight.OutlineTransparency = 0.75
+                end
+                
+                -- Ensure we do not create duplicate power labels
+                local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+                if torso and not torso:FindFirstChild("BillboardGui") then
+                    local billboardGui = Instance.new("BillboardGui", torso)
+                    billboardGui.Name = "BillboardGui"
+                    billboardGui.Size = UDim2.new(1, 0, 1, 0)
+                    billboardGui.Adornee = torso
+                    billboardGui.AlwaysOnTop = true
+
+                    local textLabel = Instance.new("TextLabel", billboardGui)
+                    textLabel.Size = UDim2.new(1, 0, 1, 0)
+                    textLabel.BackgroundTransparency = 1
+                    textLabel.Text = "Power: " .. tostring(displayPowerEnabled)
+                    textLabel.TextColor3 = Color3.fromRGB(255, 255, 0)
+                    textLabel.TextStrokeTransparency = 0
+                    textLabel.TextScaled = true
+                end
+            end
+        end
+    else
+        -- Remove highlight and power labels from characters
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player.Character then
+                local character = player.Character
+                
+                -- Remove highlight
+                local highlight = character:FindFirstChild("CharacterHighlight")
+                if highlight then
+                    highlight:Destroy()
+                end
+
+                -- Remove power labels
+                local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
                 if torso then
                     local billboardGui = torso:FindFirstChild("BillboardGui")
                     if billboardGui then
