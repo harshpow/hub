@@ -849,138 +849,16 @@ AutolockToggleButton.MouseButton1Click:Connect(toggleAutolock)
 local function toggleBallTrajectory()
     ballTrajectoryEnabled = not ballTrajectoryEnabled
     if ballTrajectoryEnabled then
-        -- Define game constants
-        local GRAVITY = Vector3.new(0, -50, 0) -- Game-specific gravity set to 50
-        local TIME_STEP = 0.2 -- Increased time step to reduce number of points (less lag)
-        local MAX_TIME = 5 -- Maximum time to simulate trajectory (in seconds)
-        local MIN_Y_LEVEL = 17 -- The first Y level where the green sphere is placed
-        local MIN_Y2_LEVEL = 0.5 -- The second Y level where the white sphere is placed
-
-        -- Get the folder where balls are stored
-        local ballsFolder = workspace.Balls
-
-        -- Function to calculate and visualize the trajectory of a ball
-        local function showTrajectory(ballModel)
-            local trajectoryFolder = Instance.new("Folder")
-            trajectoryFolder.Name = "Trajectory_" .. ballModel.Name
-            trajectoryFolder.Parent = workspace
-
-            -- Continuously update the trajectory as long as the ball exists
-            local trajectoryLoop
-            trajectoryLoop = game:GetService("RunService").Heartbeat:Connect(function()
-                if not ballModel.Parent then
-                    -- If the ball has been removed, clean up the trajectory and stop the loop
-                    trajectoryFolder:Destroy()
-                    trajectoryLoop:Disconnect()
-                    return
-                end
-
-                -- Clear previous trajectory points
-                for _, part in pairs(trajectoryFolder:GetChildren()) do
-                    part:Destroy()
-                end
-
-                -- Access the current velocity and position from the model
-                local ballVelocity = ballModel:FindFirstChild("Velocity").Value -- Get the velocity Vector3
-                local ballPosition = ballModel:FindFirstChild("Position").Value -- Get the current position of the ball
-
-                local cutOffPoint1 = nil -- Variable to store the exact point where the trajectory cuts off at Y 10
-                local cutOffPoint2 = nil -- Variable to store the exact point where the trajectory cuts off at Y 1
-
-                -- Iterate through time steps to calculate future positions
-                for t = 0, MAX_TIME, TIME_STEP do
-                    -- Calculate the new position using physics equations
-                    local futurePosition = ballPosition + ballVelocity * t + 0.5 * GRAVITY * t^2
-
-                    -- Check if the trajectory goes below the Y level of MIN_Y_LEVEL (Y = 10)
-                    if not cutOffPoint1 and futurePosition.Y < MIN_Y_LEVEL then
-                        -- Calculate precise intersection point with MIN_Y_LEVEL using interpolation
-                        local previousT = t - TIME_STEP
-                        local previousPosition = ballPosition + ballVelocity * previousT + 0.5 * GRAVITY * previousT^2
-                        local deltaY = futurePosition.Y - previousPosition.Y
-                        local ratio = (MIN_Y_LEVEL - previousPosition.Y) / deltaY
-                        cutOffPoint1 = previousPosition:Lerp(futurePosition, ratio)
-                    end
-
-                    -- Check if the trajectory goes below the Y level of MIN_Y2_LEVEL (Y = 1)
-                    if not cutOffPoint2 and futurePosition.Y < MIN_Y2_LEVEL then
-                        -- Calculate precise intersection point with MIN_Y2_LEVEL using interpolation
-                        local previousT = t - TIME_STEP
-                        local previousPosition = ballPosition + ballVelocity * previousT + 0.5 * GRAVITY * previousT^2
-                        local deltaY = futurePosition.Y - previousPosition.Y
-                        local ratio = (MIN_Y2_LEVEL - previousPosition.Y) / deltaY
-                        cutOffPoint2 = previousPosition:Lerp(futurePosition, ratio)
-                        break -- Stop further calculations once we have cut-off points for both levels
-                    end
-                end
-
-                -- If the trajectory cuts off at MIN_Y_LEVEL (Y = 10), place a green sphere there
-                if cutOffPoint1 then
-                    local greenSphere = Instance.new("Part")
-                    greenSphere.Shape = Enum.PartType.Ball -- Make the part a sphere
-                    greenSphere.Size = Vector3.new(2.5, 2.5, 2.5) -- Larger size for the sphere
-                    greenSphere.Position = cutOffPoint1 -- Set the sphere at the cut-off point at Y 10
-                    greenSphere.Anchored = true
-                    greenSphere.CanCollide = false
-                    greenSphere.Color = Color3.new(1, 0, 0)
-                    greenSphere.Material = Enum.Material.Neon
-                    greenSphere.Transparency = 0.95
-                    greenSphere.Parent = trajectoryFolder
-                end
-
-                -- If the trajectory cuts off at MIN_Y2_LEVEL (Y = 1), place a white sphere there
-                if cutOffPoint2 then
-                    local whiteSphere = Instance.new("Part")
-                    whiteSphere.Shape = Enum.PartType.Cylinder -- Make the part a sphere
-                    whiteSphere.Size = Vector3.new(0.5, 2.5, 2.5) -- Larger size for the sphere
-                    whiteSphere.Position = cutOffPoint2 -- Set the sphere at the cut-off point at Y 1
-                    whiteSphere.Anchored = true
-                    whiteSphere.CanCollide = false
-                    whiteSphere.BrickColor = BrickColor.new("Institutional white")
-                    whiteSphere.Material = Enum.Material.Neon
-                    whiteSphere.Transparency = 0
-                    whiteSphere.Orientation = Vector3.new(180, 0, -90)
-                    whiteSphere.Parent = trajectoryFolder
-                end
-            end)
-        end
-
-        -- Function to track new balls added to the folder
-        local function onBallAdded(ballModel)
-            -- Wait for the velocity and position values to appear in the model
-            local velocityValue = ballModel:WaitForChild("Velocity")
-            local positionValue = ballModel:WaitForChild("Position")
-
-            -- Call the function to show trajectory once the values are available
-            if velocityValue and positionValue then
-                showTrajectory(ballModel) -- Continuously update the trajectory
-            end
-        end
-
-        -- Connect to the ChildAdded event to track new balls
-        ballsFolder.ChildAdded:Connect(onBallAdded)
-
-        -- Optionally, loop through existing balls in case they were already present
-        for _, ballModel in pairs(ballsFolder:GetChildren()) do
-            onBallAdded(ballModel)
-        end
-
+        Ball_Prediction("Ball")
         BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
     else
-        -- Remove the existing trajectory visualization
-        for _, folder in pairs(workspace:GetChildren()) do
-            if folder.Name:match("^Trajectory_") then
-                folder:Destroy()
-            end
-        end
-
+        RunService:UnbindFromRenderStep("VisualizeLandingPosition")
         BallTrajectoryButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     end
     saveSettings()
 end
 
 BallTrajectoryButton.MouseButton1Click:Connect(toggleBallTrajectory)
-
 
 -- Toggle overlap script
 local function toggleOverlapScript()
