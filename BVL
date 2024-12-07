@@ -834,7 +834,7 @@ local function handleAutolockInput(input, gameProcessed)
             wait(0.45)
             player:SetAttribute("isShiftLock", false)
         else -- if shiftlock was off
-            wait(0.35)
+            wait(0.3)
             player:SetAttribute("isShiftLock", true)
             wait(0.1)
             player:SetAttribute("isShiftLock", false)
